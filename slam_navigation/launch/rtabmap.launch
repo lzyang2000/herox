@@ -1,0 +1,16 @@
+<launch>
+  <!-- Mapping -->
+   <include file="$(find rtabmap_ros)/launch/rtabmap.launch">
+            <arg name="rtabmap_args"       value="--delete_db_on_start"/>
+            <arg name="depth_topic"        value="/camera/aligned_depth_to_color/image_raw"/>
+            <arg name="frame_id"           value="camera_link"/>
+            <arg name="visual_odometry"    value="false"/>
+            <arg name="odom_topic"         value="/odom"/>
+            <arg name="rgb_topic"          value="/camera/color/image_raw"/>
+            <arg name="camera_info_topic"  value="/camera/color/camera_info"/>
+            <arg name="queue_size"         value="200"/>
+            <arg name="rviz"               value="true"/>
+            <arg name="approx_sync"          value="true"/>     
+            <arg name="rtabmapviz"         value="false"/>
+    </include>
+</launch>
