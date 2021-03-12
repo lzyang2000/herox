@@ -25,6 +25,8 @@
             <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
                 <arg name="enable_pointcloud" value="false"/>
             </include>
+            <include file="$(find slam_navigation)/launch/depth_to_scan.launch">
+            </include>
         </group>
 
         <group if="$(arg use_base)" >
@@ -34,15 +36,13 @@
             </include>
 
         </group>
-
-        <group if="$(arg teleop)">
-            <include file="$(find locobot_control)/launch/dynamixel_controllers.launch">
-                <arg name="dynamixel_info" value="$(find locobot_control)/config/dynamixels_teleop.yaml"/>
+         <group if="$(arg use_slam)" >
+            <include file="$(find slam_navigation)/launch/rtabmap.launch">
             </include>
-            <node name="robot_teleop_server" pkg="locobot_control" type="robot_teleop_server.py" output="screen"/>
         </group>
+
         <group unless="$(arg teleop)">
-            <group if="$(eval arg('use_arm') or arg('use_camera') or arg('use_vslam'))">
+            <group if="$(eval arg('use_arm') or arg('use_camera') or arg('use_slam'))">
                 <include file="$(find locobot_control)/launch/dynamixel_controllers.launch"/>
             </group>
         </group>
@@ -53,30 +53,16 @@
     </group>
 
     <!-- Gazebo -->
-    <group if="$(arg use_sim)">
-        
-        <include file="$(find locobot_gazebo)/launch/gazebo_locobot.launch">
-            <arg name="base" value="$(arg base)"/>
-        </include>
-
-        <include file="$(find locobot_gazebo)/launch/gazebo_locobot_control.launch"/>
-        <node name="locobot_gazebo" pkg="locobot_gazebo" type="locobot_gazebo" 
-            respawn="true" output="screen"/> 
-        <group if="$(arg teleop)">
-            <node name="robot_teleop_server" pkg="locobot_control"
-                  type="robot_teleop_server.py" output="screen"/>
-        </group>
-    </group>
 
 
     <!-- Common -->
     
-    <group if="$(eval arg('use_base') or arg('use_sim'))" >
+ <group if="$(eval arg('use_base') or arg('use_sim'))" >
         <include file="$(find slam_navigation)/launch/move_base.launch">
             <arg name="use_map" value="$(arg use_slam)"/>
             <arg name="base" value="$(arg base)"/>
         </include>
-    </group>
+    </group> 
 
 
     <group if="$(eval base =='create')">
@@ -91,7 +77,7 @@
         </include>
     </group>
 
-    <node pkg="slam_navigation" name="map_server1" type="map_server.py" output="screen"> 
-</node>
+    <!-- <node pkg="slam_navigation" name="map_server1" type="map_server.py" output="screen">  -->
+<!-- </node> -->
 
 </launch>
