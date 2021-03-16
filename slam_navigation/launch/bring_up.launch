@@ -22,11 +22,13 @@
     <group unless="$(arg use_sim)">
 
         <group if="$(arg use_camera)">
+        <node name="init_config" pkg="slam_navigation"
+              type="init.py"  output="screen"/>
             <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
                 <arg name="enable_pointcloud" value="false"/>
             </include>
-            <include file="$(find slam_navigation)/launch/depth_to_scan.launch">
-            </include>
+            <!-- <include file="$(find slam_navigation)/launch/depth_to_scan.launch">
+            </include> -->
         </group>
 
         <group if="$(arg use_base)" >

@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find flir_boson_usb)/launch/flir_boson.launch" />
+    <include file="$(find ueye_cam)/launch/flir_boson.launch" />
+</launch>
