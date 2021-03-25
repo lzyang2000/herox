@@ -27,6 +27,9 @@
             <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
                 <arg name="enable_pointcloud" value="false"/>
             </include>
+            <include file="$(find flir_boson_usb)/launch/flir_boson_rectified.launch">
+                <arg name="dev" value="/dev/video0"/>
+            </include>
             <!-- <include file="$(find slam_navigation)/launch/depth_to_scan.launch">
             </include> -->
         </group>
