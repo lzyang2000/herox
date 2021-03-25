@@ -14,8 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
-  vision_msgs
-)
+  )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -74,7 +73,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   sensor_msgs#   std_msgs#   vision_msgs
+#   sensor_msgs#   std_msgs# 
 # )
 
 ################################################
@@ -109,7 +108,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES image_process
-#  CATKIN_DEPENDS cv_bridge message_filters roscpp rospy sensor_msgs std_msgs vision_msgs
+#  CATKIN_DEPENDS cv_bridge message_filters roscpp rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
 
