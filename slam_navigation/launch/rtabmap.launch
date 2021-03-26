@@ -66,6 +66,8 @@
 	  <param name="subscribe_depth"     type="bool"   value="true"/>
 	  <param name="subscribe_scan"      type="bool"   value="false"/>
 	  <param name="map_negative_poses_ignored" type="bool" value="true"/>
+    <param name="cloud_noise_filtering_radius" value="0.05"/>
+    <param name="cloud_noise_filtering_min_neighbors" value="2"/>
 
           <!-- When sending goals on /rtabmap/goal topic, use actionlib to communicate with move_base --> 
 	  <param name="use_action_for_goal" type="bool" value="true"/>

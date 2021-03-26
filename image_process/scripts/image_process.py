@@ -3,77 +3,71 @@
 import cv2
 import rospy
 from std_msgs.msg import Float32
-from geometry_msgs.msg import Pose
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+from message_filters import TimeSynchronizer, Subscriber, ApproximateTimeSynchronizer
 import time
 import sys
 import os
 import numpy as np
-import pickle
-import glob
-import os
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
-class visualizer:
-    def __init__(self,path):
+class processor:
+    def __init__(self,):
+        self.bridge = CvBridge()
+        self.image_sub_EO = Subscriber(rospy.get_param('rgb_topic'), Image)
+        self.image_sub_IR = Subscriber(rospy.get_param('ir_topic'), Image)
+        self.sync =  ApproximateTimeSynchronizer([self.image_sub_EO, self.image_sub_IR], 60,rospy.get_param('sync_delta',0.005), allow_headerless=True)
+        self.image_pub_rgb = rospy.Publisher("image_process/sync_rgb",Image,queue_size=5)
+        self.image_pub_ir = rospy.Publisher("image_process/sync_ir",Image,queue_size=5)
+        self.sync.registerCallback(self.callback)
         self.count = 0.0
         self.start = True
         self.start_time = 0.0
-        self.coords_path = glob.glob(path+'/'+'*.pkl')
-        self.images_path = glob.glob(path+'/'+'*.jpg')
-        self.coords_path.sort( key=os.path.getmtime)
-        self.images_path.sort( key=os.path.getmtime)
-        self.coords = []
-        self.images = []
-        last_seen = None
-        for i,j in zip(self.coords_path,self.images_path):
-            with open(i,'rb') as f:
-                coord = pickle.load(f)
-                if not last_seen:
-                    self.coords.append(coord)
-                    self.images.append(cv2.imread(j))
-                    last_seen = coord
-                elif last_seen != coord:
-                    self.coords.append(coord)
-                    self.images.append(cv2.imread(j))
-    
-    
-    def process(self):
-        self.TwoD_index = []
-        for i in self.coords:
-            self.TwoD_index.append([i.position.x,i.position.y])
         
-        self.TwoD_index = np.array(self.TwoD_index)
-        self.fig, self.ax1 = plt.subplots()
-        self.ax1.set_title('click on points', picker=True)
-        self.ax1.set_ylabel('X(m)', picker=True)
-        self.ax1.set_xlabel('Y(m)', picker=True)
-        line, = self.ax1.plot(self.TwoD_index[:,1],self.TwoD_index[:,0], '-o')
-        self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True)
-        # q = self.ax1.quiver(self.TwoD_index[:,1],self.TwoD_index[:,0],u,v)
-        self.pick_simple()
-        plt.xlim([-0.5,0.5])
-        plt.show()
+    def callback(self,image_rgb,image_ir):
+        try:
+            if self.start:
+                self.start_time =  rospy.get_time()
+            rgb_image_cv = self.bridge.imgmsg_to_cv2(image_rgb, "rgb8")
+            thm_image_cv = self.bridge.imgmsg_to_cv2(image_ir, "mono8")
+            image_rgb, image_ir = self.process(rgb_image_cv,thm_image_cv) 
+            self.image_pub_rgb.publish(self.bridge.cv2_to_imgmsg(image_rgb,"rgb8"))
+            self.image_pub_ir.publish(self.bridge.cv2_to_imgmsg(image_ir,"mono8"))
+            self.count+=1
+            print("Sync FPS: ", self.count/(rospy.get_time()-self.start_time))
+        except CvBridgeError as e:
+            print(e)
+            
+    def process(self, image_rgb,image_ir):
+        image_rgb_processed = image_rgb
+        image_ir_processed = image_ir
+        return image_rgb_processed,image_ir_processed
         
-    def pick_simple(self):
-        # simple picking, lines, rectangles and text
-        def onpick(event):
-            ind = event.ind
-            ind = ind[0]
-            print('onpick3 scatter:', ind, self.TwoD_index[:,1][ind], self.TwoD_index[:,0][ind])
-            cv2.namedWindow(str(ind), cv2.WINDOW_NORMAL)
-            cv2.imshow(str(ind),self.images[ind])
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-
-
-        self.fig.canvas.mpl_connect('pick_event', onpick)
-        
-
-
 def main(args):
-    visualizer('/home/locobot/slam_ws/image_data').process()
-
+    rospy.init_node('image_process', anonymous=True)
+    ic = processor()
+    try:
+        rospy.spin()
+    except KeyboardInterrupt:
+        print("Shutting down")
+        sys.exit(0)
+    # cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main(sys.argv)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
