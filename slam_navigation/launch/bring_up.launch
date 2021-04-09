@@ -19,11 +19,10 @@
 
 
 
-    <group unless="$(arg use_sim)">
-
+    <group unless="$(arg use_sim)"> 
+<node name="listener" pkg="roscpp_tutorials" type="listener"  />
         <group if="$(arg use_camera)">
-        <node name="init_config" pkg="slam_navigation"
-              type="init.py"  output="screen"/>
+        
             <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
                 <arg name="enable_pointcloud" value="false"/>
             </include>
@@ -32,6 +31,8 @@
             </include>
             <!-- <include file="$(find slam_navigation)/launch/depth_to_scan.launch">
             </include> -->
+            <node name="init_config" pkg="slam_navigation"
+              type="init.py"  output="screen"/>
         </group>
 
         <group if="$(arg use_base)" >

@@ -6,9 +6,9 @@ local_costmap:
    static_map: false
    rolling_window: true
    always_send_full_costmap: true
-   width: 4.0
-   height: 4.0
-   resolution: 0.01
+   width: 2.0
+   height: 2.0
+   resolution: 0.05
    transform_tolerance: 0.5
    map_type: costmap
    plugins:
