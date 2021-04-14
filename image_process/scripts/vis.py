@@ -13,6 +13,18 @@ import glob
 import os
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+import re
+
+def atoi(text):
+    return int(text) if text.isdigit() else text
+
+def natural_keys(text):
+    '''
+    alist.sort(key=natural_keys) sorts in human order
+    http://nedbatchelder.com/blog/200712/human_sorting.html
+    (See Toothy's implementation in the comments)
+    '''
+    return [ atoi(c) for c in re.split(r'(\d+)', text) ]
 
 class visualizer:
     def __init__(self,path):
@@ -21,8 +33,9 @@ class visualizer:
         self.start_time = 0.0
         self.coords_path = glob.glob(path+'/'+'*.pkl')
         self.images_path = glob.glob(path+'/'+'*.jpg')
-        self.coords_path.sort( key=os.path.getmtime)
-        self.images_path.sort( key=os.path.getmtime)
+        self.coords_path.sort( key=natural_keys)
+        self.images_path.sort( key=natural_keys)
+        print(self.coords_path)
         self.coords = []
         self.images = []
         last_seen = None
@@ -41,7 +54,7 @@ class visualizer:
     def process(self):
         self.TwoD_index = []
         for i in self.coords:
-            self.TwoD_index.append([i.position.x,i.position.y])
+            self.TwoD_index.append([i.pose.position.x,i.pose.position.y])
         
         self.TwoD_index = np.array(self.TwoD_index)
         self.fig, self.ax1 = plt.subplots()
@@ -52,7 +65,7 @@ class visualizer:
         self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True)
         # q = self.ax1.quiver(self.TwoD_index[:,1],self.TwoD_index[:,0],u,v)
         self.pick_simple()
-        plt.xlim([-0.5,0.5])
+        # plt.xlim([-0.5,0.5])
         plt.show()
         
     def pick_simple(self):
@@ -72,7 +85,7 @@ class visualizer:
 
 
 def main(args):
-    visualizer('/home/locobot/slam_ws/image_data').process()
+    visualizer('/home/locobot/slam_ws/image_data_2').process()
 
 
 if __name__ == '__main__':
