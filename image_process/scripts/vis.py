@@ -16,6 +16,18 @@ from matplotlib.lines import Line2D
 import skimage.io as skio
 import skimage as sk
 from skimage import feature
+import re
+
+def atoi(text):
+    return int(text) if text.isdigit() else text
+
+def natural_keys(text):
+    '''
+    alist.sort(key=natural_keys) sorts in human order
+    http://nedbatchelder.com/blog/200712/human_sorting.html
+    (See Toothy's implementation in the comments)
+    '''
+    return [ atoi(c) for c in re.split(r'(\d+)', text) ]
 
 class visualizer:
     def __init__(self,path):
@@ -24,12 +36,9 @@ class visualizer:
         self.start_time = 0.0
         self.coords_path = glob.glob(path+'/'+'*.pkl')
         self.images_path = glob.glob(path+'/'+'*.jpg')
-        self.coords_path.sort( key=os.path.getmtime)
-        self.images_path.sort( key=os.path.getmtime)
-        #self.coords_path.sort()
-        #self.images_path.sort()
+        self.coords_path.sort( key=natural_keys)
+        self.images_path.sort( key=natural_keys)
         print(self.coords_path)
-        print(self.images_path)
         self.coords = []
         self.images = []
         last_seen = None
@@ -129,7 +138,6 @@ def main(args):
     v = visualizer('/home/daly/Downloads/1st_floor')
     v.draw_wall()
     v.process()
-
 
 if __name__ == '__main__':
     main(sys.argv)
