@@ -1,14 +1,14 @@
 import casadi as ca
-from cheetah_model import CheetahModel
+from turtle_model import TurtleModel
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
 
-class CheetahOpti:
+class TurtleOpti:
     def __init__(self):
-        self.cheetah = CheetahModel()
-        self.cheetah_model = self.cheetah.get_model()
+        self.turtle = TurtleModel()
+        self.turtle_model = self.turtle.get_model()
         
         # state
         # [x, y, yaw, dx, dy, dyaw]
@@ -86,10 +86,10 @@ class CheetahOpti:
             Xk = self.states[:, k]
             Uk = self.inputs[:, k]
    
-            self.opti.subject_to(self.opti.bounded(self.cheetah.input_bound_lb, Uk, self.cheetah.input_bound_ub))
+            self.opti.subject_to(self.opti.bounded(self.turtle.input_bound_lb, Uk, self.turtle.input_bound_ub))
             Xk_next = self.states[:, k + 1]
-            self.opti.subject_to(self.opti.bounded(self.cheetah.state_bound_lb, Xk_next, self.cheetah.state_bound_ub))
-            state_dot = self.cheetah_model(Xk, Uk)
+            self.opti.subject_to(self.opti.bounded(self.turtle.state_bound_lb, Xk_next, self.turtle.state_bound_ub))
+            state_dot = self.turtle_model(Xk, Uk)
             state_p = Xk + (state_dot+last_statedot)*dt/2.0
 
             self.opti.subject_to(state_p == Xk_next)
@@ -135,7 +135,7 @@ class CheetahOpti:
 
 
 if __name__ == "__main__":
-    co = CheetahOpti()
+    co = TurtleOpti()
     import time
 
     start_time = time.time()

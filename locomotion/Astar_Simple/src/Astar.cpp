@@ -182,7 +182,7 @@ bool Astar::CheckCollision(Mat _LabelMap, int x, int y, double theta)
 }
 
 void Astar::RobotKinematics(Mat neighbor,Mat _LabelMap,int &x,int &y, double &theta_, int cx,int cy,double ct,int k)
-{ //TODO: Update non-holonimic kinematics
+{
     y = cy + neighbor.at<char>(k, 0);
     x = cx + neighbor.at<char>(k, 1);
     // cout<<((double)(neighbor.at<char>(k, 2)-1) )<<endl;

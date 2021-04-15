@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 
-class CheetahModel:
+class TurtleModel:
 
     def __init__(self):
 
