@@ -130,6 +130,8 @@ class visualizer:
         ymin = min(self.wall[:, 1])
         ymax = max(self.wall[:, 1])
         while (x <= xmax and x >= xmin and y <=ymax and y >= ymin):
+            if np.logical_and(np.isclose(x, self.wall[:,0], atol=0.05), np.isclose(y, self.wall[:,1], atol=0.05)).any():
+                break
             self.path.append([x, y])
             x += 0.01 * np.cos(theta)
             y += 0.01 * np.sin(theta)
@@ -177,7 +179,7 @@ class visualizer:
         self.ax1.set_ylabel('X(m)', picker=True)
         self.ax1.set_xlabel('Y(m)', picker=True)
         line, = self.ax1.plot(self.TwoD_index[:,1],self.TwoD_index[:,0], '-o')
-        lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.', markersize=5)
+        lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.', markersize=4)
         self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True)
         # q = self.ax1.quiver(self.TwoD_index[:,1],self.TwoD_index[:,0],u,v)
         self.pick_simple()
