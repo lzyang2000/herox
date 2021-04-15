@@ -57,8 +57,8 @@ class visualizer:
         self.wall = []
         a = np.array(skio.imread("map3.pgm"))
         #a = a[::-1]
-        #b = sk.transform.rotate(a, 90, preserve_range=True)
         b = a
+        b = sk.transform.rotate(a, -90, preserve_range=True)
         b[b>220] = 0
         e1 = np.array(feature.canny(b,sigma=5), dtype=int)
         for i in range(len(e1)):
@@ -69,16 +69,15 @@ class visualizer:
                     e1[i][j] = 255
         xs, ys = np.where(e1 == 0)
         #print ys
-        scale = len(a) / 20
+        scale = 0.05
         for i in range(len(xs)):
-            self.wall.append([xs[i] - len(a)/2, ys[i] - len(a)/2])
+            self.wall.append([(xs[i] - len(a)/2) * scale, (ys[i] - len(a)/2) * scale])
         self.wall = np.array(self.wall)
     
     def alternative_wall(self):
         self.wall = []
         m = np.array(skio.imread("map3.pgm"))
         fill = m.copy()
-        plt.figure(figsize=(20,10))
         mask = fill == 254
         maskup = np.roll(mask, 1, axis = 0)
         maskright = np.roll(mask, 1, axis = 1)
@@ -110,7 +109,7 @@ class visualizer:
         self.ax1.set_ylabel('X(m)', picker=True)
         self.ax1.set_xlabel('Y(m)', picker=True)
         line, = self.ax1.plot(self.TwoD_index[:,1],self.TwoD_index[:,0], '-o')
-        #lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.')
+        lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.')
         self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True)
         # q = self.ax1.quiver(self.TwoD_index[:,1],self.TwoD_index[:,0],u,v)
         self.pick_simple()
