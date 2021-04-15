@@ -78,6 +78,8 @@ class visualizer:
     def draw_wall_jason(self):
         self.wall = []
         m = np.array(skio.imread("map3.pgm"))
+        #self.occupancy = np.zeros(m.shape)
+        #print(self.occupancy.shape)
         fill= m.copy()
         fill = np.transpose(fill, (1, 0))
         fill = fill[:, ::-1]
@@ -107,6 +109,7 @@ class visualizer:
         self.wall = np.array(self.wall)
     
     def raytrace(self, img, x, y, theta):
+        path = []
         while(y<len(img) and x<len(img)):
             y += 0.5
             x += np.tan(theta)*0.5
@@ -119,6 +122,20 @@ class visualizer:
                 break
             img[int(x)][int(y)] = 125
     
+    def raytrace_on_matplot(self, x, y, theta):
+        print("raytracing starting at", x, y, theta)
+        self.path = []
+        xmin = min(self.wall[:, 0])
+        xmax = max(self.wall[:, 0])
+        ymin = min(self.wall[:, 1])
+        ymax = max(self.wall[:, 1])
+        while (x <= xmax and x >= xmin and y <=ymax and y >= ymin):
+            self.path.append([x, y])
+            x += 0.01 * np.cos(theta)
+            y += 0.01 * np.sin(theta)
+            
+        self.path = np.array(self.path)
+
     def euler_from_quaternion(self, x, y, z, w):
         """
         Convert a quaternion into euler angles (roll, pitch, yaw)
@@ -160,7 +177,7 @@ class visualizer:
         self.ax1.set_ylabel('X(m)', picker=True)
         self.ax1.set_xlabel('Y(m)', picker=True)
         line, = self.ax1.plot(self.TwoD_index[:,1],self.TwoD_index[:,0], '-o')
-        lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.')
+        lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.', markersize=5)
         self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True)
         # q = self.ax1.quiver(self.TwoD_index[:,1],self.TwoD_index[:,0],u,v)
         self.pick_simple()
@@ -173,11 +190,17 @@ class visualizer:
             ind = event.ind
             ind = ind[0]
             print('onpick3 scatter:', ind, self.TwoD_index[:,1][ind], self.TwoD_index[:,0][ind])
+            self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind])
+            print(self.path)
+            lin3, = self.ax1.plot(self.path[:,1],self.path[:,0], '.', markersize=2)
             cv2.namedWindow(str(ind), cv2.WINDOW_NORMAL)
             cv2.resizeWindow(str(ind), 800, 400)
             cv2.imshow(str(ind),self.images[ind])
+            self.fig.canvas.draw()
             cv2.waitKey(0)
             cv2.destroyAllWindows()
+            lin3.remove()
+            self.fig.canvas.draw()
 
         self.fig.canvas.mpl_connect('pick_event', onpick)
         
