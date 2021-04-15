@@ -8,7 +8,7 @@ map_type: costmap
 #Set the tolerance we're willing to have for tf transforms
 transform_tolerance: 2.0
 obstacle_range: 3.5
-raytrace_range: 4.0
+raytrace_range: 5.0
 
 footprint: [[-0.127, -0.127], [-0.18, 0.0], [-0.127, 0.127], [0.0, 0.18], [0.127, 0.127], [0.18, 0.0], [0.127, -0.127], [0.0, -0.18]]
 #robot_radius: 0.18

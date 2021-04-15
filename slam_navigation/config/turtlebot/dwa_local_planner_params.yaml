@@ -59,8 +59,8 @@
 DWAPlannerROS:
 
 # Robot Configuration Parameters - Kobuki
-  max_vel_x: 0.25  # 0.55
-  min_vel_x: 0.1 
+  max_vel_x: 0.1  # 0.55
+  min_vel_x: 0.05
 
   max_vel_y: 0.0  # diff drive robot
   min_vel_y: 0.0  # diff drive robot
@@ -115,14 +115,14 @@ DWAPlannerROS:
 #  holonomic_robot: false
 
 TrajectoryPlannerROS:
-   max_vel_x: 0.36
-   min_vel_x: 0.2
+   max_vel_x: 0.15
+   min_vel_x: 0.1
    max_vel_y: 0.0  # zero for a differential drive robot
    min_vel_y: 0.0
    max_vel_theta: 0.7
    min_vel_theta: -0.7
    min_in_place_vel_theta: 0.5
-   escape_vel: -0.15
+   escape_vel: 0
    acc_lim_x: 0.3 # From test trials (0.304,0.285,0.26,0.365)
    acc_lim_y: 0.0 # zero for a differential drive robot
    acc_lim_theta: 1.0 #probably closer to 1.3 
