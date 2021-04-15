@@ -16,7 +16,9 @@ from matplotlib.lines import Line2D
 import skimage.io as skio
 import skimage as sk
 from skimage import feature
+from skimage import filters
 import re
+import math
 
 def atoi(text):
     return int(text) if text.isdigit() else text
@@ -38,7 +40,6 @@ class visualizer:
         self.images_path = glob.glob(path+'/'+'*.jpg')
         self.coords_path.sort( key=natural_keys)
         self.images_path.sort( key=natural_keys)
-        print(self.coords_path)
         self.coords = []
         self.images = []
         last_seen = None
@@ -72,19 +73,38 @@ class visualizer:
         scale = 0.05
         for i in range(len(xs)):
             self.wall.append([(xs[i] - len(a)/2) * scale, (ys[i] - len(a)/2) * scale])
-        self.wall = np.array(self.wall)
+        self.wall = np.array(self.wall)   
     
-    def alternative_wall(self):
+    def draw_wall_jason(self):
         self.wall = []
         m = np.array(skio.imread("map3.pgm"))
-        fill = m.copy()
+        fill= m.copy()
+        fill = np.transpose(fill, (1, 0))
+        fill = fill[:, ::-1]
+        #fill = sk.transform.rotate(m, -90, preserve_range=True)
         mask = fill == 254
         maskup = np.roll(mask, 1, axis = 0)
         maskright = np.roll(mask, 1, axis = 1)
+        #maskdown = np.roll(mask, -1, axis = 0)
+        #maskleft = np.roll(mask, -1, axis = 1)
         fill[mask] = 0
         fill[maskup] = 0
         fill[maskright] = 0
+        #fill[maskdown] = 0
+        #fill[maskleft] = 0
         fill = filters.gaussian(fill)
+        e1 = np.array(feature.canny(fill), dtype=int)
+        for i in range(len(e1)):
+            for j in range(len(e1[0])):
+                if e1[i][j]:
+                    e1[i][j] = 0
+                else:
+                    e1[i][j] = 255
+        xs, ys = np.where(e1 == 0)
+        scale = 0.05
+        for i in range(len(xs)):
+            self.wall.append([(xs[i] - len(fill)/2) * scale, (ys[i] - len(fill)/2) * scale])
+        self.wall = np.array(self.wall)
     
     def raytrace(self, img, x, y, theta):
         while(y<len(img) and x<len(img)):
@@ -97,11 +117,40 @@ class visualizer:
                 break
             img[int(x)][int(y)] = 125
     
-    
+    def euler_from_quaternion(self, x, y, z, w):
+        """
+        Convert a quaternion into euler angles (roll, pitch, yaw)
+        roll is rotation around x in radians (counterclockwise)
+        pitch is rotation around y in radians (counterclockwise)
+        yaw is rotation around z in radians (counterclockwise)
+        """
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        roll_x = math.atan2(t0, t1)
+     
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        pitch_y = math.asin(t2)
+     
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw_z = math.atan2(t3, t4)
+     
+        return roll_x, pitch_y, yaw_z # in radians     
+
     def process(self):
         self.TwoD_index = []
+        self.orientation = []
+        prev = [float('inf'), float('inf')]
         for i in self.coords:
-            self.TwoD_index.append([i.pose.position.x,i.pose.position.y])
+            if (np.sqrt((prev[0] - i.pose.position.x) ** 2 + (prev[1] - i.pose.position.y) ** 2) > 0.1):
+                self.TwoD_index.append([i.pose.position.x,i.pose.position.y])
+                self.orientation.append(self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2])
+            prev = [i.pose.position.x,i.pose.position.y]
+        
+        for o in self.orientation:
+            print(o)
         
         self.TwoD_index = np.array(self.TwoD_index)
         self.fig, self.ax1 = plt.subplots()
@@ -123,10 +172,10 @@ class visualizer:
             ind = ind[0]
             print('onpick3 scatter:', ind, self.TwoD_index[:,1][ind], self.TwoD_index[:,0][ind])
             cv2.namedWindow(str(ind), cv2.WINDOW_NORMAL)
+            cv2.resizeWindow(str(ind), 800, 400)
             cv2.imshow(str(ind),self.images[ind])
             cv2.waitKey(0)
             cv2.destroyAllWindows()
-
 
         self.fig.canvas.mpl_connect('pick_event', onpick)
         
@@ -135,7 +184,7 @@ class visualizer:
 def main(args):
     #visualizer('/home/locobot/slam_ws/image_data').process()
     v = visualizer('/home/daly/Downloads/1st_floor')
-    v.draw_wall()
+    v.draw_wall_jason()
     v.process()
 
 if __name__ == '__main__':
