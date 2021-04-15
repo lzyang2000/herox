@@ -42,6 +42,7 @@ class visualizer:
         self.images_path.sort( key=natural_keys)
         self.coords = []
         self.images = []
+        self.wall_hits = []
         last_seen = None
         for i,j in zip(self.coords_path,self.images_path):
             with open(i,'rb') as f:
@@ -125,18 +126,21 @@ class visualizer:
     def raytrace_on_matplot(self, x, y, theta):
         print("raytracing starting at", x, y, theta)
         self.path = []
+        hitpoint = None
         xmin = min(self.wall[:, 0])
         xmax = max(self.wall[:, 0])
         ymin = min(self.wall[:, 1])
         ymax = max(self.wall[:, 1])
         while (x <= xmax and x >= xmin and y <=ymax and y >= ymin):
             if np.logical_and(np.isclose(x, self.wall[:,0], atol=0.05), np.isclose(y, self.wall[:,1], atol=0.05)).any():
+                hitpoint = [x, y]
                 break
             self.path.append([x, y])
             x += 0.01 * np.cos(theta)
             y += 0.01 * np.sin(theta)
             
         self.path = np.array(self.path)
+        return hitpoint
 
     def euler_from_quaternion(self, x, y, z, w):
         """
@@ -167,13 +171,14 @@ class visualizer:
         for i in self.coords:
             if (np.sqrt((prev[0] - i.pose.position.x) ** 2 + (prev[1] - i.pose.position.y) ** 2) > 0.1):
                 self.TwoD_index.append([i.pose.position.x,i.pose.position.y])
-                self.orientation.append(self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2])
+                theta = self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2]
+                self.orientation.append(theta)
+                self.wall_hits.append(self.raytrace_on_matplot(i.pose.position.x, i.pose.position.y, theta))
             prev = [i.pose.position.x,i.pose.position.y]
         
-        for o in self.orientation:
-            print(o)
         
         self.TwoD_index = np.array(self.TwoD_index)
+        self.wall_hits = np.array(self.wall_hits)
         self.fig, self.ax1 = plt.subplots()
         self.ax1.set_title('click on points', picker=True)
         self.ax1.set_ylabel('X(m)', picker=True)
@@ -181,6 +186,7 @@ class visualizer:
         line, = self.ax1.plot(self.TwoD_index[:,1],self.TwoD_index[:,0], '-o')
         lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.', markersize=4)
         self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True)
+        self.ax1.scatter(self.wall_hits[:,1],self.wall_hits[:,0], marker='8', color='purple', picker=True)
         # q = self.ax1.quiver(self.TwoD_index[:,1],self.TwoD_index[:,0],u,v)
         self.pick_simple()
         #plt.xlim([-0.5,0.5])
@@ -193,7 +199,6 @@ class visualizer:
             ind = ind[0]
             print('onpick3 scatter:', ind, self.TwoD_index[:,1][ind], self.TwoD_index[:,0][ind])
             self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind])
-            print(self.path)
             lin3, = self.ax1.plot(self.path[:,1],self.path[:,0], '.', markersize=2)
             cv2.namedWindow(str(ind), cv2.WINDOW_NORMAL)
             cv2.resizeWindow(str(ind), 800, 400)
@@ -205,7 +210,6 @@ class visualizer:
             self.fig.canvas.draw()
 
         self.fig.canvas.mpl_connect('pick_event', onpick)
-        
 
 
 def main(args):
