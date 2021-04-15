@@ -290,6 +290,16 @@ void Explore::start()
 void Explore::stop()
 {
   // move_base_client_.cancelAllGoals();
+  move_base_msgs::MoveBaseGoal goal;
+  geometry_msgs::Point target_position;
+  target_position.x = 0.0;
+  target_position.y = 0.0;
+  target_position.z = 0.0;
+  goal.target_pose.pose.position = target_position;
+  goal.target_pose.pose.orientation.w = 1.;
+  goal.target_pose.header.frame_id = costmap_client_.getGlobalFrameID();
+  goal.target_pose.header.stamp = ros::Time::now();
+  frontier_pub.publish(goal);
   exploring_timer_.stop();
   ROS_INFO("Exploration stopped.");
 }

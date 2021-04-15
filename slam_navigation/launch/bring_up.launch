@@ -111,8 +111,4 @@
             <arg name="use_rviz" value="$(arg use_rviz)"/>
         </include>
     </group>
-
-    <!-- <node pkg="slam_navigation" name="map_server1" type="map_server.py" output="screen">  -->
-<!-- </node> -->
-
 </launch>
