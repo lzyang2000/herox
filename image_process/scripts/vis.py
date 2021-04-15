@@ -112,7 +112,9 @@ class visualizer:
             x += np.tan(theta)*0.5
             if y>=len(img) or x>=len(img):
                 break
-            if img[int(x)][int(y)] == 0:
+
+            area = img[int(x)-1:int(x)+2][int(y)-1:int(y)+2]
+            if (area==0).any():
                 print(int(x), int(y))
                 break
             img[int(x)][int(y)] = 125
