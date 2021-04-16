@@ -14,9 +14,6 @@ else:
     import tty, termios
 if os.name != 'nt':
     settings = termios.tcgetattr(sys.stdin)
-from cmd_pack import cmd_lcm
-from cmd_lcm2 import cmd_lcm2
-from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Path
 from std_msgs.msg import Float32MultiArray, Float32, Int16, Float64, Bool
@@ -30,19 +27,17 @@ class Controller():
         # rospy.init_node('control')
         self.hz = 100.0
         self.rate = rospy.Rate(self.hz)
-        self.lc = lcm.LCM()
         # rospy.Subscriber('gazebo/model_states',ModelStates,loc_callback)
         self.curr_state = np.zeros(5)
         self.time_span = 0.0
         self.local_path_func = None
         self.__sub_local_path = rospy.Subscriber("/local_planner/local_plan", LocalPlan, self.__local_plan_cb, queue_size=1)    
-        self.sub2 = rospy.Subscriber('/is_hop', Bool, self.is_hop_cb, queue_size=1)
-        self.pub = rospy.Publisher('/cmd_vel',Twist,queue_size=1)
+        self.pub = rospy.Publisher('/cmd_vel',Twist,queue_size=1) #TODO: change to /navigation_smoother/cmd_vel?
         self.listener = tf.TransformListener()
         self.curr_time = 0.0
         self.time_sol= 0
         self.local_plan = np.zeros([20,3])
-        self.hop_fin_pub = rospy.Publisher('/hop_fin',Bool,queue_size=1)
+        # self.hop_fin_pub = rospy.Publisher('/hop_fin',Bool,queue_size=1)
         self.control_cmd = Twist()
         self.hop_lock = False
         if( control_mode == 1):

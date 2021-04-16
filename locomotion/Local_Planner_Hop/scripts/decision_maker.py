@@ -5,14 +5,14 @@ from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Point, Twist
 from nav_msgs.msg import Path, Odometry, OccupancyGrid
 from gazebo_msgs.msg import ModelStates
 import numpy as np
-from cheetah_opti import CheetahOpti
+from turtle_opti import TurtleOpti
 from scipy.interpolate import interp1d
 from visualization_msgs.msg import Marker, MarkerArray
 import math
 import tf
 class DescisionMaker:
     def __init__(self):
-        self.cheetah_opti=CheetahOpti()
+        self.turtle_opti=TurtleOpti()
         self.side = rospy.get_param('/map/map_size', 15.)
         self.head_x_offset = rospy.get_param('/head_x_offset', 0.1)
         self.base_link_x_offset = rospy.get_param('/base_link_x_offset', -0.1)
@@ -20,7 +20,6 @@ class DescisionMaker:
         self.range_next_waypoint = rospy.get_param('/planner/range_next_waypoint',0.3)
         self.__qt_reso = rospy.get_param('/planner/low_reso',0.05)
         self.max_admissible_height = rospy.get_param('/planner/max_admissible_height', 0.3)
-        self.__qtmap_height = int(self.side/self.__qt_reso)
         self.__qtmap_width = int(self.side/self.__qt_reso)
         self.__occupied_qt_height_map = Float32MultiArray()
         self.height_map = np.zeros((self.__qtmap_width, self.__qtmap_height))
@@ -29,7 +28,7 @@ class DescisionMaker:
                                 (0, -1),
                                 (-1, 0)]
         self.global_plan = None
-        self.curr_state = np.zeros(self.cheetah_opti.get_state_num())
+        self.curr_state = np.zeros(self.turtle_opti.get_state_num())
         self.desired_global_path = ([ np.zeros([200,4]) , 0])
 
         self.__timer_localplanner_target = rospy.Timer(rospy.Duration(1/10.0), self.publish_local_plan_target)
