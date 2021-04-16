@@ -42,6 +42,7 @@ class visualizer:
         self.images_path.sort( key=natural_keys)
         self.coords = []
         self.images = []
+        self.path = []
         self.wall_hits = []
         last_seen = None
         for i,j in zip(self.coords_path,self.images_path):
@@ -123,9 +124,9 @@ class visualizer:
                 break
             img[int(x)][int(y)] = 125
     
-    def raytrace_on_matplot(self, x, y, theta):
+    def raytrace_on_matplot(self, x, y, theta, step=0.01):
         print("raytracing starting at", x, y, theta)
-        self.path = []
+        path_list = []
         hitpoint = None
         xmin = min(self.wall[:, 0])
         xmax = max(self.wall[:, 0])
@@ -135,12 +136,12 @@ class visualizer:
             if np.logical_and(np.isclose(x, self.wall[:,0], atol=0.05), np.isclose(y, self.wall[:,1], atol=0.05)).any():
                 hitpoint = [x, y]
                 break
-            self.path.append([x, y])
-            x += 0.01 * np.cos(theta)
-            y += 0.01 * np.sin(theta)
+            path_list.append([x, y])
+            x += step * np.cos(theta)
+            y += step * np.sin(theta)
             
-        self.path = np.array(self.path)
-        return hitpoint
+        path_list = np.array(path_list)
+        return hitpoint, path_list
 
     def euler_from_quaternion(self, x, y, z, w):
         """
@@ -173,13 +174,14 @@ class visualizer:
                 self.TwoD_index.append([i.pose.position.x,i.pose.position.y])
                 theta = self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2]
                 self.orientation.append(theta)
-                self.wall_hits.append(self.raytrace_on_matplot(i.pose.position.x, i.pose.position.y, theta))
+                hit, _ = self.raytrace_on_matplot(i.pose.position.x, i.pose.position.y, theta)
+                self.wall_hits.append(hit)
             prev = [i.pose.position.x,i.pose.position.y]
         
         
         self.TwoD_index = np.array(self.TwoD_index)
         self.wall_hits = np.array(self.wall_hits)
-        self.fig, self.ax1 = plt.subplots()
+        self.fig, self.ax1 = plt.subplots(figsize=(7, 10))
         self.ax1.set_title('click on points', picker=True)
         self.ax1.set_ylabel('X(m)', picker=True)
         self.ax1.set_xlabel('Y(m)', picker=True)
@@ -198,15 +200,21 @@ class visualizer:
             ind = event.ind
             ind = ind[0]
             print('onpick3 scatter:', ind, self.TwoD_index[:,1][ind], self.TwoD_index[:,0][ind])
-            self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind])
-            lin3, = self.ax1.plot(self.path[:,1],self.path[:,0], '.', markersize=2)
+            _, path = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind])
+            _, left_limit = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] - np.pi/4, step=0.1)
+            _, right_limit = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] + np.pi/4, step=0.1)
+            combined = np.concatenate((path, left_limit, right_limit), axis=0)
+            line, = self.ax1.plot(combined[:,1],combined[:,0], '.', markersize=2)
+            self.fig.canvas.draw() # update the plot with the ray
             cv2.namedWindow(str(ind), cv2.WINDOW_NORMAL)
             cv2.resizeWindow(str(ind), 800, 400)
-            cv2.imshow(str(ind),self.images[ind])
-            self.fig.canvas.draw()
+            img_with_heatmap = self.images[ind].copy()
+            width_cutoff = img_with_heatmap.shape[1] // 2
+            img_with_heatmap[:, width_cutoff:] = cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_COOL)
+            cv2.imshow(str(ind), img_with_heatmap)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
-            lin3.remove()
+            line.remove() # remove the ray
             self.fig.canvas.draw()
 
         self.fig.canvas.mpl_connect('pick_event', onpick)
