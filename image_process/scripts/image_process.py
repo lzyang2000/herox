@@ -18,7 +18,7 @@ class processor:
         self.image_sub_EO = Subscriber(rospy.get_param('rgb_topic'), Image)
         self.image_sub_IR = Subscriber(rospy.get_param('ir_topic'), Image)
         self.odom_sub = Subscriber(rospy.get_param('odom_topic'), Odometry)
-        self.sync =  ApproximateTimeSynchronizer([self.image_sub_EO, self.image_sub_IR,self.odom_sub], 60,rospy.get_param('sync_delta',0.005), allow_headerless=True)
+        self.sync =  ApproximateTimeSynchronizer([self.image_sub_EO, self.image_sub_IR,self.odom_sub], 10,rospy.get_param('sync_delta',0.005), allow_headerless=True)
         # self.image_pub_rgb = rospy.Publisher("image_process/sync_rgb",Image,queue_size=5)
         # self.image_pub_ir = rospy.Publisher("image_process/sync_ir",Image,queue_size=5)
         self.sync.registerCallback(self.callback)
