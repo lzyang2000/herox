@@ -37,9 +37,10 @@ class visualizer:
         self.start = True
         self.start_time = 0.0
         self.coords_path = glob.glob(path+'/'+'*.pkl')
-        self.images_path = glob.glob(path+'/'+'*.jpg')
+        self.images_path = glob.glob(path+'/a/'+'*.jpg')
         self.coords_path.sort( key=natural_keys)
         self.images_path.sort( key=natural_keys)
+        print(self.images_path)
         self.coords = []
         self.images = []
         self.path = []
@@ -79,7 +80,7 @@ class visualizer:
     
     def draw_wall_jason(self):
         self.wall = []
-        m = np.array(skio.imread("map3.pgm"))
+        m = np.array(skio.imread("../../../307data/map.pgm"))
         #self.occupancy = np.zeros(m.shape)
         #print(self.occupancy.shape)
         fill= m.copy()
@@ -170,7 +171,7 @@ class visualizer:
         self.orientation = []
         prev = [float('inf'), float('inf')]
         for i in self.coords:
-            if (np.sqrt((prev[0] - i.pose.position.x) ** 2 + (prev[1] - i.pose.position.y) ** 2) > 0.1):
+            if (np.sqrt((prev[0] - i.pose.position.x) ** 2 + (prev[1] - i.pose.position.y) ** 2) > -0.1):
                 self.TwoD_index.append([i.pose.position.x,i.pose.position.y])
                 theta = self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2]
                 self.orientation.append(theta)
@@ -185,9 +186,13 @@ class visualizer:
         self.ax1.set_title('click on points', picker=True)
         self.ax1.set_ylabel('X(m)', picker=True)
         self.ax1.set_xlabel('Y(m)', picker=True)
+        print(self.TwoD_index.shape)
         line, = self.ax1.plot(self.TwoD_index[:,1],self.TwoD_index[:,0], '-o')
         lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.', markersize=4)
         self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True)
+        
+        
+        print(self.wall_hits.shape)
         self.ax1.scatter(self.wall_hits[:,1],self.wall_hits[:,0], marker='8', color='purple', picker=True)
         # q = self.ax1.quiver(self.TwoD_index[:,1],self.TwoD_index[:,0],u,v)
         self.pick_simple()
@@ -222,7 +227,7 @@ class visualizer:
 
 def main(args):
     #visualizer('/home/locobot/slam_ws/image_data').process()
-    v = visualizer('/home/daly/Downloads/1st_floor')
+    v = visualizer('../../../307data')
     v.draw_wall_jason()
     v.process()
 
