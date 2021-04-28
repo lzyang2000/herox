@@ -13,13 +13,10 @@ import glob
 import os
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-<<<<<<< HEAD
-=======
 import skimage.io as skio
 import skimage as sk
 from skimage import feature
 from skimage import filters
->>>>>>> master
 import re
 import math
 
