@@ -37,25 +37,39 @@ class visualizer:
         self.start = True
         self.start_time = 0.0
         self.coords_path = glob.glob(path+'/'+'*.pkl')
-        self.images_path = glob.glob(path+'/a/'+'*.jpg')
+        self.images_path = glob.glob(path+'/'+'*_RGB.jpg')
         self.coords_path.sort( key=natural_keys)
         self.images_path.sort( key=natural_keys)
-        print(self.images_path)
+        print(self.coords_path)
         self.coords = []
         self.images = []
         self.path = []
         self.wall_hits = []
         last_seen = None
+        
+        #for i in self.coords_path:
+            #with open(i,'rb') as f:
+                #coord = pickle.load(f)
+            #self.coords.append(coord)
+        
         for i,j in zip(self.coords_path,self.images_path):
             with open(i,'rb') as f:
                 coord = pickle.load(f)
                 if not last_seen:
                     self.coords.append(coord)
-                    self.images.append(cv2.imread(j))
+                    im = cv2.imread(j)
+                    ir = cv2.imread(j.replace('RGB', 'IR'))
+                    ir = cv2.resize(ir, (im.shape[1], im.shape[0]))
+                    #ir = cv2.cvtColor(ir, cv2.COLOR_GRAY2BGR)
+                    self.images.append(cv2.hconcat([im, ir]))
                     last_seen = coord
                 elif last_seen != coord:
                     self.coords.append(coord)
-                    self.images.append(cv2.imread(j))
+                    im = cv2.imread(j)
+                    ir = cv2.imread(j.replace('RGB', 'IR'))
+                    ir = cv2.resize(ir, (im.shape[1], im.shape[0]))
+                    #ir = cv2.cvtColor(ir, cv2.COLOR_GRAY2BGR)
+                    self.images.append(cv2.hconcat([im, ir]))
     
     def draw_wall(self):
         self.wall = []
@@ -80,7 +94,7 @@ class visualizer:
     
     def draw_wall_jason(self):
         self.wall = []
-        m = np.array(skio.imread("../../../307data/map.pgm"))
+        m = np.array(skio.imread("../../../307-1data/map.pgm"))
         #self.occupancy = np.zeros(m.shape)
         #print(self.occupancy.shape)
         fill= m.copy()
@@ -99,13 +113,20 @@ class visualizer:
         #fill[maskleft] = 0
         fill = filters.gaussian(fill)
         e1 = np.array(feature.canny(fill), dtype=int)
+        
+        wall = np.transpose(m, (1, 0))[:, ::-1] == 0
+        e1[wall] = 1
+        
+        mask = np.ones(e1.shape)
         for i in range(len(e1)):
             for j in range(len(e1[0])):
-                if e1[i][j]:
-                    e1[i][j] = 0
-                else:
-                    e1[i][j] = 255
-        xs, ys = np.where(e1 == 0)
+                if np.sum(e1[i-2:i+3, j-2:j+3]) > 0:
+
+                    print(np.sum(e1[i-2:i+3, j-2:j+3]))
+                if e1[i][j] and np.sum(e1[i-2:i+3, j-2:j+3]) >= 4:
+                    mask[i][j] = 0
+        
+        xs, ys = np.where(mask == 0)
         scale = 0.05
         for i in range(len(xs)):
             self.wall.append([(xs[i] - len(fill)/2) * scale, (ys[i] - len(fill)/2) * scale])
@@ -170,14 +191,17 @@ class visualizer:
         self.TwoD_index = []
         self.orientation = []
         prev = [float('inf'), float('inf')]
-        for i in self.coords:
-            if (np.sqrt((prev[0] - i.pose.position.x) ** 2 + (prev[1] - i.pose.position.y) ** 2) > -0.1):
+        filterimage = []
+        for i, j in zip(self.coords, self.images):
+            if (np.sqrt((prev[0] - i.pose.position.x) ** 2 + (prev[1] - i.pose.position.y) ** 2) > 0.01):
                 self.TwoD_index.append([i.pose.position.x,i.pose.position.y])
                 theta = self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2]
                 self.orientation.append(theta)
                 hit, _ = self.raytrace_on_matplot(i.pose.position.x, i.pose.position.y, theta)
                 self.wall_hits.append(hit)
+                filterimage.append(j)
             prev = [i.pose.position.x,i.pose.position.y]
+        self.images = filterimage
         
         
         self.TwoD_index = np.array(self.TwoD_index)
@@ -227,7 +251,7 @@ class visualizer:
 
 def main(args):
     #visualizer('/home/locobot/slam_ws/image_data').process()
-    v = visualizer('../../../307data')
+    v = visualizer('../../../307-1data')
     v.draw_wall_jason()
     v.process()
 

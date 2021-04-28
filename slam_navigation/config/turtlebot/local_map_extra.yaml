@@ -3,4 +3,4 @@ static_layer:
   first_map_only: false
 
 inflation_layer:
-  inflation_radius: 0.25
+  inflation_radius: 0.15

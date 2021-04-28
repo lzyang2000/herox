@@ -1,5 +1,5 @@
 <launch>
-        <rosparam param="sync_delta">0.005</rosparam>
+        <rosparam param="sync_delta">0.015</rosparam>
         <rosparam param="ir_topic">"/flir_boson/image_rect"</rosparam>
         <rosparam param="rgb_topic">"/camera/color/image_rect_color"</rosparam>
         <rosparam param="odom_topic">"/odom"</rosparam>

@@ -59,7 +59,7 @@
 DWAPlannerROS:
 
 # Robot Configuration Parameters - Kobuki
-  max_vel_x: 0.1  # 0.55
+  max_vel_x: 0.2  # 0.55
   min_vel_x: 0.05
 
   max_vel_y: 0.0  # diff drive robot
@@ -73,8 +73,8 @@ DWAPlannerROS:
   #   do not set min_trans_vel to 0.0 otherwise dwa will always think translational velocities
   #   are non-negligible and small in place rotational velocities will be created.
 
-  max_rot_vel: 2.0  # choose slightly less than the base's capability
-  min_rot_vel: 1.0  # this is the min angular velocity when there is negligible translational velocity
+  max_rot_vel: 0.4  # choose slightly less than the base's capability
+  min_rot_vel: 0.3  # this is the min angular velocity when there is negligible translational velocity
   rot_stopped_vel: 0.5
   
   acc_lim_x: 1.0 # maximum is theoretically 2.0, but we 
@@ -115,17 +115,17 @@ DWAPlannerROS:
 #  holonomic_robot: false
 
 TrajectoryPlannerROS:
-   max_vel_x: 0.15
+   max_vel_x: 0.3
    min_vel_x: 0.1
    max_vel_y: 0.0  # zero for a differential drive robot
    min_vel_y: 0.0
-   max_vel_theta: 0.7
-   min_vel_theta: -0.7
-   min_in_place_vel_theta: 0.5
+   max_vel_theta: 0.2
+   min_vel_theta: -0.2
+   min_in_place_vel_theta: 0.2
    escape_vel: 0
    acc_lim_x: 0.3 # From test trials (0.304,0.285,0.26,0.365)
    acc_lim_y: 0.0 # zero for a differential drive robot
-   acc_lim_theta: 1.0 #probably closer to 1.3 
+   acc_lim_theta: 0.3 #probably closer to 1.3 
 
    holonomic_robot: false
    yaw_goal_tolerance: 0.20 # about 12 degrees
@@ -133,7 +133,7 @@ TrajectoryPlannerROS:
    latch_xy_goal_tolerance: true
    pdist_scale: 0.6
    gdist_scale: 0.7
-   meter_scoring: true
+   meter_scoring: false
 
    heading_lookahead: 0.375
 
