@@ -26,9 +26,9 @@
             <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
                 <arg name="enable_pointcloud" value="false"/>
             </include>
-            <!-- <include file="$(find flir_boson_usb)/launch/flir_boson_rectified.launch">
-                <arg name="dev" value="/dev/video0"/>
-            </include> -->
+            <include file="$(find flir_boson_usb)/launch/flir_boson_rectified.launch">
+                <arg name="dev" value="/dev/video3"/>
+            </include>
             <!-- <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
                 <param name="video_device" value="/dev/video3"/>
                 <param name="image_width" value="640" />
@@ -49,7 +49,7 @@
                 
                 <!-- Min and max range range of generated laser scan - set this to match your depth sensor -->
                 <param name="range_min" value="0.2"/>
-                <param name="range_max" value="5.0"/>
+                <param name="range_max" value="10.0"/>
                 
                 <!-- Frame of your depth sensor -->
                 <param name="target_frame" value="camera_link"/>
@@ -60,8 +60,8 @@
                 <!-- Topic to which LaserScan will be published -->
                 <remap from="scan" to="/scan"/>
             </node>
-            <node name="init_config" pkg="slam_navigation"
-              type="init.py"  output="screen"/>
+            <!-- <node name="init_config" pkg="slam_navigation"
+              type="init.py"  output="screen"/> -->
         </group>
 
         <group if="$(arg use_base)" >
@@ -111,4 +111,9 @@
             <arg name="use_rviz" value="$(arg use_rviz)"/>
         </include>
     </group>
+
+    <!-- <node pkg="slam_navigation" name="map_server1" type="map_server.py" output="screen">  -->
+<!-- </node> -->
+    <!--<include file="$(find slam_navigation)/launch/amcl_demo.launch">
+            </include> -->
 </launch>

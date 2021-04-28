@@ -52,7 +52,7 @@
                 pointcloud: {data_type: PointCloud2, clearing: true, marking: true, topic: /camera/depth_registered/points, raytrace_range: $(arg sensor_range), obstacle_range: $(arg sensor_range)}
 
             inflation:
-                inflation_radius: 0.15
+                inflation_radius: 0.055
       </rosparam>
     </node>
 
