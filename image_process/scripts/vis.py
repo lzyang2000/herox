@@ -57,7 +57,7 @@ class visualizer:
                 coord = pickle.load(f)
                 if not last_seen:
                     self.coords.append(coord)
-                    im = cv2.imread(j)
+                    im = cv2.imread(j)[:, :, ::-1]
                     ir = cv2.imread(j.replace('RGB', 'IR'))
                     ir = cv2.resize(ir, (im.shape[1], im.shape[0]))
                     #ir = cv2.cvtColor(ir, cv2.COLOR_GRAY2BGR)
@@ -65,12 +65,12 @@ class visualizer:
                     last_seen = coord
                 elif last_seen != coord:
                     self.coords.append(coord)
-                    im = cv2.imread(j)
+                    im = cv2.imread(j)[:, :, ::-1]
                     ir = cv2.imread(j.replace('RGB', 'IR'))
                     ir = cv2.resize(ir, (im.shape[1], im.shape[0]))
                     #ir = cv2.cvtColor(ir, cv2.COLOR_GRAY2BGR)
                     self.images.append(cv2.hconcat([im, ir]))
-    
+
     def draw_wall(self):
         self.wall = []
         a = np.array(skio.imread("map3.pgm"))
@@ -120,9 +120,9 @@ class visualizer:
         mask = np.ones(e1.shape)
         for i in range(len(e1)):
             for j in range(len(e1[0])):
-                if np.sum(e1[i-2:i+3, j-2:j+3]) > 0:
+                # if np.sum(e1[i-2:i+3, j-2:j+3]) > 0:
 
-                    print(np.sum(e1[i-2:i+3, j-2:j+3]))
+                    # print(np.sum(e1[i-2:i+3, j-2:j+3]))
                 if e1[i][j] and np.sum(e1[i-2:i+3, j-2:j+3]) >= 4:
                     mask[i][j] = 0
         
@@ -193,7 +193,7 @@ class visualizer:
         prev = [float('inf'), float('inf')]
         filterimage = []
         for i, j in zip(self.coords, self.images):
-            if (np.sqrt((prev[0] - i.pose.position.x) ** 2 + (prev[1] - i.pose.position.y) ** 2) > 0.01):
+            if (np.sqrt((prev[0] - i.pose.position.x) ** 2 + (prev[1] - i.pose.position.y) ** 2) > -0.01):
                 self.TwoD_index.append([i.pose.position.x,i.pose.position.y])
                 theta = self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2]
                 self.orientation.append(theta)
@@ -202,6 +202,7 @@ class visualizer:
                 filterimage.append(j)
             prev = [i.pose.position.x,i.pose.position.y]
         self.images = filterimage
+        print('total data num', len(self.images))
         
         
         self.TwoD_index = np.array(self.TwoD_index)
@@ -239,7 +240,7 @@ class visualizer:
             cv2.resizeWindow(str(ind), 800, 400)
             img_with_heatmap = self.images[ind].copy()
             width_cutoff = img_with_heatmap.shape[1] // 2
-            img_with_heatmap[:, width_cutoff:] = cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_COOL)
+            img_with_heatmap[:, width_cutoff:] = cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_JET)
             cv2.imshow(str(ind), img_with_heatmap)
             cv2.waitKey(0)
             cv2.destroyAllWindows()

@@ -79,9 +79,7 @@ private:
   void visualizeFrontiers(
       const std::vector<frontier_exploration::Frontier>& frontiers);
 
-  void reachedGoal(const actionlib::SimpleClientGoalState& status,
-                   const move_base_msgs::MoveBaseResultConstPtr& result,
-                   const geometry_msgs::Point& frontier_goal);
+  void reachedGoal(const move_base_msgs::MoveBaseGoal& frontier_goal);
 
   bool goalOnBlacklist(const geometry_msgs::Point& goal);
 

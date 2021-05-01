@@ -37,7 +37,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## * In the file package.xml:
 ##   * add a build_depend tag for "message_generation"
 ##   * add a build_depend and a exec_depend tag for each package in MSG_DEP_SET
-##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
+ ##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
 ##     but can be declared for certainty nonetheless:
 ##     * add a exec_depend tag for "message_runtime"
 ## * In this file (CMakeLists.txt):
@@ -137,8 +137,8 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_ir_sub src/ir_sub.cpp)
-add_executable(${PROJECT_NAME}_ir_pub src/ir_pub.cpp)
+#add_executable(${PROJECT_NAME}_ir_sub src/ir_sub.cpp)
+#add_executable(${PROJECT_NAME}_ir_pub src/ir_pub.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,12 +151,12 @@ add_executable(${PROJECT_NAME}_ir_pub src/ir_pub.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(${PROJECT_NAME}_ir_sub
-   ${catkin_LIBRARIES}
- )
-  target_link_libraries(${PROJECT_NAME}_ir_pub
-   ${catkin_LIBRARIES}
- )
+# target_link_libraries(${PROJECT_NAME}_ir_sub
+#   ${catkin_LIBRARIES}
+# )
+##  target_link_libraries(${PROJECT_NAME}_ir_pub
+ #  ${catkin_LIBRARIES}
+ #)
 
 #############
 ## Install ##

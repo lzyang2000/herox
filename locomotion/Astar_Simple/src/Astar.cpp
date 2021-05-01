@@ -147,12 +147,12 @@ bool Astar::CheckCollision(Mat _LabelMap, int x, int y, double theta)
     //     is_walkable=false;
     // }
 
-    for(int xi=x-4; xi<=x+4; xi++)
+    for(int xi=x-3; xi<=x+3; xi++)
     {
-        for(int yi=y-4; yi<=y+4; yi++){
+        for(int yi=y-3; yi<=y+3; yi++){
             double x_s = (xi-x)*cos(theta)+(y-yi)*sin(theta);
             double y_s = -(xi-x)*sin(theta)+(y-yi)*cos(theta);
-            if( (x_s*x_s/2 + y_s*y_s/2 <= 1) && _LabelMap.at<uchar>(yi, xi) == obstacle )
+            if( (x_s*x_s/2 + y_s*y_s/2 <= 9) && _LabelMap.at<uchar>(yi, xi) == obstacle )
             {
                 is_walkable=false;
                 return is_walkable;
@@ -255,6 +255,11 @@ Node* Astar::FindPath()
             return CurNode; // Find a valid path
         }
 
+        if((curX - targetPoint.x)*(curX - targetPoint.x)+ (curY - targetPoint.y)*(curY - targetPoint.y)<=25)
+        {
+            return CurNode; // Find a valid path
+        }
+
         // Traversal the neighborhood
         for(int k = 0;k < neighbor.rows;k++)
         {
@@ -349,7 +354,7 @@ Node* Astar::FindPath()
 
 void Astar::Smooth(vector<Point_3D>& path){
     for(int i=0;i<path.size();i++){
-        int num = 5;
+        int num = 0;
         float low = max(0,i-num);
         float high = min(path.size()-1,i+num);
         float x=0,y=0,theta=0;

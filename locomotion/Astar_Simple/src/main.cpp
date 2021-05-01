@@ -52,8 +52,8 @@ bool startpoint_flag;
 bool targetpoint_flag;
 bool start_flag;
 int rate;
-int height = 150;
-int width = 150;
+int height = 2021;
+int width = 2021;
 
 
 std::vector<float> height_maps;
@@ -137,6 +137,8 @@ void MapCallback(const nav_msgs::OccupancyGrid& msg)
     global_Map = Map;
     global_Mask = Mask;
     // Publish Mask
+    // nav_msgs::OccupancyGrid a;
+    // OccGridMask = a;
     OccGridMask.header.stamp = ros::Time::now();
     OccGridMask.header.frame_id = "/map";
     OccGridMask.info = msg.info;
@@ -159,6 +161,7 @@ void curr_state_callback(const nav_msgs::Odometry& msg){
     // ROS_INFO("curr_state: %d",map_flag);
     if(map_flag){
          // ROS_INFO("curr_state!\n");
+        
         Point_3D src_point(msg.pose.pose.position.x, msg.pose.pose.position.y);
         double roll, pitch, yaw;
         geometry_msgs::Quaternion q =msg.pose.pose.orientation;
@@ -227,7 +230,7 @@ int main(int argc, char * argv[])
     // Subscribe topics
     map_sub = nh.subscribe("/map", 10, MapCallback);
 
-    startPoint_sub = nh.subscribe("/odom", 10, curr_state_callback);
+    startPoint_sub = nh.subscribe("/correct_odom", 10, curr_state_callback);
     targetPoint_sub = nh.subscribe("/explore/frontier", 10, TargetPointtCallback);
     
 

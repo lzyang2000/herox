@@ -104,7 +104,7 @@ class CheetahPlanner():
 			m.points.append(p)
 
 			arr = Marker()
-			arr.header.frame_id = '/cassie/map'
+			arr.header.frame_id = '/map'
 			arr.header.stamp = rospy.Time.now()
 			arr.id = i 
 			arr.action = m.ADD

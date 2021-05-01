@@ -244,6 +244,7 @@ void Explore::makePlan()
   //       reachedGoal(status, result, target_position);
   //     });
   frontier_pub.publish(goal);
+  reachedGoal(goal);
 }
 
 bool Explore::goalOnBlacklist(const geometry_msgs::Point& goal)
@@ -263,13 +264,11 @@ bool Explore::goalOnBlacklist(const geometry_msgs::Point& goal)
   return false;
 }
 
-void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
-                          const move_base_msgs::MoveBaseResultConstPtr&,
-                          const geometry_msgs::Point& frontier_goal)
+void Explore::reachedGoal(const move_base_msgs::MoveBaseGoal& frontier_goal)
 {
-  ROS_DEBUG("Reached goal with status: %s", status.toString().c_str());
-  if (status == actionlib::SimpleClientGoalState::ABORTED) {
-    frontier_blacklist_.push_back(frontier_goal);
+  ROS_DEBUG("Reached goal");
+  if (0) {
+    frontier_blacklist_.push_back(frontier_goal.target_pose.pose.position);
     ROS_DEBUG("Adding current goal to black list");
   }
 
