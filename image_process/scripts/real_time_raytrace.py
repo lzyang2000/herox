@@ -53,10 +53,21 @@ class tracer():
                 self.odomList.append(odom)
 
     def callback_map(self, data):
-        print('map value', np.mean(data.data))
+        print('map value', np.unique(data.data))
         map = np.array(data.data)
+        
+        unknown = map == -1
+        wall = map == 100
+        free = map == 0
+        
+        canvas = np.zeros(map.shape)
+        canvas[unknown] = 205
+        canvas[wall] = 0
+        canvas[free] = 254
+        map = canvas.astype(np.uint8)
+        
         size = int(np.sqrt(map.shape[0]))
-        self.latest_map = map.reshape((size, size))
+        self.latest_map = map.reshape((size, size))[::-1]
         skio.imsave('test.png', self.latest_map)
         print('map shape', self.latest_map.shape)
 
