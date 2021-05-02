@@ -53,6 +53,7 @@ class tracer():
                 self.odomList.append(odom)
 
     def callback_map(self, data):
+        print('map value', np.mean(data.data))
         map = np.array(data.data)
         size = int(np.sqrt(map.shape[0]))
         self.latest_map = map.reshape((size, size))
