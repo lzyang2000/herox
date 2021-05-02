@@ -69,10 +69,6 @@ class listen():
         #with open("debug.pkl",'wb') as f:
             #pickle.dump(self.lastMap, f)
         
-class poseWrapper():
-    def __init__(self, pose):
-        self.pose = pose
-        
         
         
 if __name__ == '__main__':
