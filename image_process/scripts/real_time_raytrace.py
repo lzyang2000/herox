@@ -22,7 +22,7 @@ class tracer():
         self.odom_sub = rospy.Subscriber("image_process/sync_odom",Odometry,callback=self.callback_odom)
         self.map_sub = rospy.Subscriber("map",OccupancyGrid,callback=self.callback_map)
 
-        self.raytrace_pub = rospy.Publisher("raytrace",Odometry,queue_size=5)
+        self.raytrace_pub = rospy.Publisher("raytrace",OccupancyGrid,queue_size=1,latch=True)
 
         self.tf_listener = tf.TransformListener()
         self.odomList = []
@@ -64,15 +64,11 @@ class tracer():
 
 if __name__ == '__main__':
     T = tracer()
-    try:
-        rospy.spin()
-    except KeyboardInterrupt:
-        print("Shutting down")
-        sys.exit(0)
+    rate = rospy.Rate(10)
+    while not rospy.is_shutdown():
+        if T.latest_map is not None and len(T.odomList):
+            T.raytrace()
+        else:
+            print('empty info, sleep')
+            rate.sleep()
 
-    print('finished rospy spin')
-
-    # while not rospy.is_shutdown() and T.latest_map is not None and len(T.odomList):
-    #     try:
-    #         T.raytrace()
-    #     except:
