@@ -11,6 +11,7 @@ from message_filters import TimeSynchronizer, Subscriber, ApproximateTimeSynchro
 import time
 import sys
 import os
+import skimage.io as skio
 import numpy as np
 import tf
 from geometry_msgs.msg import PoseStamped
@@ -55,11 +56,12 @@ class tracer():
         map = np.array(data.data)
         size = int(np.sqrt(map.shape[0]))
         self.latest_map = map.reshape((size, size))
-
+        skio.imsave('test.png', self.latest_map)
         print('map shape', self.latest_map.shape)
 
     def raytrace(self):
-        print('raytrace')
+        #print('raytrace')
+        pass
 
 
 if __name__ == '__main__':
