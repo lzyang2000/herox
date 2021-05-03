@@ -118,11 +118,16 @@ class visualizer:
         e1[wall] = 1
         
         mask = np.ones(e1.shape)
+        # local = np.zeros(e1.shape)
+        #
+        # for i in range(-2, 3):
+        #     for j in range(-2, 3):
+        #         roll = np.roll(e1, i, axis=0)
+        #         roll = np.roll(roll, j, axis=1)
+        #
+
         for i in range(len(e1)):
             for j in range(len(e1[0])):
-                if np.sum(e1[i-2:i+3, j-2:j+3]) > 0:
-
-                    print(np.sum(e1[i-2:i+3, j-2:j+3]))
                 if e1[i][j] and np.sum(e1[i-2:i+3, j-2:j+3]) >= 4:
                     mask[i][j] = 0
         
