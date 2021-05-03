@@ -18,6 +18,7 @@ from geometry_msgs.msg import PoseStamped
 from skimage import feature
 from skimage import filters
 import math
+import pickle
 
 
 class tracer():
@@ -30,7 +31,7 @@ class tracer():
 
         self.tf_listener = tf.TransformListener()
         self.odomList = []
-        self.odomThresh = 0.01
+        self.odomThresh = 0.1
 
         self.last_odom = None
         self.latest_map = None
@@ -51,6 +52,10 @@ class tracer():
         except:
             print('TF error in tracer')
             return
+        
+        i = odom
+        theta = self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2]
+        #print('orin', theta)
 
         if self.last_odom is None:
             self.last_odom = odom
@@ -72,11 +77,11 @@ class tracer():
         canvas[free] = 254
         map = canvas.astype(np.uint8)
         size = int(np.sqrt(map.shape[0]))
-        self.latest_map = map.reshape((size, size))[::-1]
+        self.latest_map = map.reshape((size, size))
         # skio.imsave('test.png', self.latest_map)
 
     def raytrace_on_matplot(self, x, y, theta, step=0.01):
-        print("raytracing starting at", x, y, theta)
+        #print("raytracing starting at", x, y, theta)
         path_list = []
         hitpoint = None
         xmin = min(self.wall[:, 0])
@@ -91,7 +96,8 @@ class tracer():
             path_list.append([x, y])
             x += step * np.cos(theta)
             y += step * np.sin(theta)
-
+        if hitpoint is None:
+            hitpoint = [2000, 2000]
         path_list = np.array(path_list)
         return hitpoint, path_list
 
@@ -140,7 +146,7 @@ class tracer():
             for j in range(len(e1[0])):
                 if e1[i][j] and np.sum(e1[i - 2:i + 3, j - 2:j + 3]) >= 4:
                     mask[i][j] = 0
-
+        mask = mask[:, ::-1]
         xs, ys = np.where(mask == 0)
         scale = 0.05
         for i in range(len(xs)):
@@ -154,13 +160,18 @@ class tracer():
         self.TwoD_index = []
         self.orientation = []
         self.wall_hits = []
-        for i in self.odomList:
-            x, y = i.pose.position.x + self.mapSize/2, i.pose.position.y + self.mapSize/2
+        self.rays = []
+        odom = self.odomList[:]
+        print('num odom', len(odom))
+        scale = 0.05
+        for i in odom:
+            x, y = i.pose.position.x + (self.mapSize/2)*scale, i.pose.position.y + (self.mapSize/2)*scale
             self.TwoD_index.append([x, y])
             theta = self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2]
             self.orientation.append(theta)
-            hit, _ = self.raytrace_on_matplot(x, y, theta)
+            hit, ray = self.raytrace_on_matplot(x, y, theta)
             self.wall_hits.append(hit)
+            self.rays.append(ray)
 
 
     def raytrace(self):
@@ -168,21 +179,22 @@ class tracer():
         self.process()
         im = self.latest_map.copy()
         print('map', im)
-        for c in self.TwoD_index:
-            if c is None:
-                print('none')
-                continue
-            im[int(c[0]), int(c[1])] = 100
-        skio.imsave('hit.png', im)
+        
+        
+        np.save('debug/wall.npy', self.wall)
+        np.save('debug/pos.npy', self.TwoD_index)
+        np.save('debug/orien.npy', self.orientation)
+        np.save('debug/hit.npy', self.wall_hits)
+        np.save('debug/ray.npy', self.rays)
+            
+        print('done saving')
+        
+
 
 
 if __name__ == '__main__':
     T = tracer()
-    rate = rospy.Rate(10)
     while not rospy.is_shutdown():
         if T.latest_map is not None and len(T.odomList):
             T.raytrace()
-        else:
-            print('empty info, sleep')
-            rate.sleep()
 
