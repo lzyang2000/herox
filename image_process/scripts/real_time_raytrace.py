@@ -167,6 +167,7 @@ class tracer():
         self.get_wall()
         self.process()
         im = self.latest_map.copy()
+        print('map', im)
         for c in self.wall_hits:
             im[int(c[0]), int(c[1])] = 100
         skio.imsave('hit.png', im)
