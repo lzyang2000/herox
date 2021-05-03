@@ -168,7 +168,7 @@ class tracer():
         self.process()
         im = self.latest_map.copy()
         print('map', im)
-        for c in self.wall_hits:
+        for c in self.TwoD_index:
             if c is None:
                 print('none')
                 continue
