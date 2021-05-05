@@ -19,6 +19,8 @@ from skimage import feature
 from skimage import filters
 import re
 import math
+from matplotlib.widgets import Button
+import threading
 
 def atoi(text):
     return int(text) if text.isdigit() else text
@@ -46,6 +48,7 @@ class visualizer:
         self.path = []
         self.wall_hits = []
         last_seen = None
+        self.current_displayed = None
         
         #for i in self.coords_path:
             #with open(i,'rb') as f:
@@ -118,11 +121,16 @@ class visualizer:
         e1[wall] = 1
         
         mask = np.ones(e1.shape)
+        # local = np.zeros(e1.shape)
+        #
+        # for i in range(-2, 3):
+        #     for j in range(-2, 3):
+        #         roll = np.roll(e1, i, axis=0)
+        #         roll = np.roll(roll, j, axis=1)
+        #
+
         for i in range(len(e1)):
             for j in range(len(e1[0])):
-                # if np.sum(e1[i-2:i+3, j-2:j+3]) > 0:
-
-                    # print(np.sum(e1[i-2:i+3, j-2:j+3]))
                 if e1[i][j] and np.sum(e1[i-2:i+3, j-2:j+3]) >= 4:
                     mask[i][j] = 0
         
@@ -204,7 +212,7 @@ class visualizer:
         self.images = filterimage
         print('total data num', len(self.images))
         
-        
+
         self.TwoD_index = np.array(self.TwoD_index)
         self.wall_hits = np.array(self.wall_hits)
         self.fig, self.ax1 = plt.subplots(figsize=(7, 10))
@@ -215,40 +223,135 @@ class visualizer:
         line, = self.ax1.plot(self.TwoD_index[:,1],self.TwoD_index[:,0], '-o')
         lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.', markersize=4)
         self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True)
+
+        axprev = plt.axes([0.69, 0.04, 0.1, 0.03])
+        axnext = plt.axes([0.80, 0.04, 0.1, 0.03])
+        self.bnext = Button(axnext, 'Up', color='1.0')
+        self.bprev = Button(axprev, 'Down', color='1.0')
         
         
         print(self.wall_hits.shape)
         self.ax1.scatter(self.wall_hits[:,1],self.wall_hits[:,0], marker='8', color='purple', picker=True)
         # q = self.ax1.quiver(self.TwoD_index[:,1],self.TwoD_index[:,0],u,v)
+        self.click_btn()
         self.pick_simple()
         # plt.xlim([-0.5,0.5])
         plt.show()
-        
-    def pick_simple(self):
-        # simple picking, lines, rectangles and text
-        def onpick(event):
-            ind = event.ind
-            ind = ind[0]
-            print('onpick3 scatter:', ind, self.TwoD_index[:,1][ind], self.TwoD_index[:,0][ind])
+    
+    def display_img(self, ind):
+        def onclose(event):
+            if self.current_displayed:
+                self.current_displayed[3].remove()
+                self.fig.canvas.draw()
+                self.current_displayed = None
+
+        if self.current_displayed:
+            fig, ax, cur_ind, cur_line = self.current_displayed
+            print('reusing onpick fig')
+            self.current_displayed[3].remove()
+            #fig.clf()
+
             _, path = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind])
             _, left_limit = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] - np.pi/4, step=0.1)
             _, right_limit = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] + np.pi/4, step=0.1)
             combined = np.concatenate((path, left_limit, right_limit), axis=0)
             line, = self.ax1.plot(combined[:,1],combined[:,0], '.', markersize=2)
             self.fig.canvas.draw() # update the plot with the ray
-            cv2.namedWindow(str(ind), cv2.WINDOW_NORMAL)
-            cv2.resizeWindow(str(ind), 800, 400)
+            
             img_with_heatmap = self.images[ind].copy()
             width_cutoff = img_with_heatmap.shape[1] // 2
-            img_with_heatmap[:, width_cutoff:] = cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_JET)
-            cv2.imshow(str(ind), img_with_heatmap)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-            line.remove() # remove the ray
-            self.fig.canvas.draw()
+            img_with_heatmap[:, width_cutoff:] = cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_JET)   
+            plt.xticks([]), plt.yticks([])
+            ax.imshow(img_with_heatmap)
+            self.current_displayed = (fig, ax, ind, line) # keep track of current fig, idx and ray
+            plt.show()
+            
+        else:
+            print('generating onpick fig', ind, self.TwoD_index[:,1][ind], self.TwoD_index[:,0][ind])
+            _, path = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind])
+            _, left_limit = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] - np.pi/4, step=0.1)
+            _, right_limit = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] + np.pi/4, step=0.1)
+            combined = np.concatenate((path, left_limit, right_limit), axis=0)
+            line, = self.ax1.plot(combined[:,1],combined[:,0], '.', markersize=2)
+            self.fig.canvas.draw() # update the plot with the ray
+            
+            imgfig, imgax = plt.subplots(figsize=(10, 5))
+            imgfig.canvas.mpl_connect('close_event', onclose)
+            img_with_heatmap = self.images[ind].copy()
+            width_cutoff = img_with_heatmap.shape[1] // 2
+            img_with_heatmap[:, width_cutoff:] = cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_JET)   
+            plt.xticks([]), plt.yticks([])
+            imgax.imshow(img_with_heatmap)
+            self.current_displayed = (imgfig, imgax, ind, line) # keep track of current fig, ax, idx and ray
+            plt.show()
+
+    def pick_simple(self):
+        def onclose(event):
+            if self.current_displayed:
+                self.current_displayed[3].remove()
+                self.fig.canvas.draw()        
+
+        # simple picking, lines, rectangles and text
+        def onpick(event):
+            ind = event.ind
+            ind = ind[0]
+            print('onpick3 scatter:', ind, self.TwoD_index[:,1][ind], self.TwoD_index[:,0][ind])
+            self.display_img(ind)
+            #_, path = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind])
+            #_, left_limit = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] - np.pi/4, step=0.1)
+            #_, right_limit = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] + np.pi/4, step=0.1)
+            #combined = np.concatenate((path, left_limit, right_limit), axis=0)
+            #line, = self.ax1.plot(combined[:,1],combined[:,0], '.', markersize=2)
+            #self.current_displayed = (ind, line) # keep track of current idx and ray
+            #self.fig.canvas.draw() # update the plot with the ray
+            #cv2.namedWindow(str(ind), cv2.WINDOW_NORMAL)
+            #cv2.startWindowThread()
+            #def back(*args):
+            #    cv2.destroyAllWindows()
+            #cv2.createButton("Back",back,None,cv2.QT_PUSH_BUTTON,1)
+
+            #cv2.resizeWindow(str(ind), 800, 400)
+            #img_with_heatmap = self.images[ind].copy()
+            #width_cutoff = img_with_heatmap.shape[1] // 2
+            #img_with_heatmap[:, width_cutoff:] = cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_JET)
+            #tempfig, _ = plt.subplots()
+            #tempfig.canvas.mpl_connect('close_event', onclose)
+            #plt.xticks([]), plt.yticks([])
+            #plt.imshow(img_with_heatmap)
+            #plt.show()
+            #cv2.imshow(str(ind), img_with_heatmap)
+            #cv2.waitKey(0)
+            #cv2.destroyAllWindows()
+            #line.remove() # remove the ray
+            #self.fig.canvas.draw()
 
         self.fig.canvas.mpl_connect('pick_event', onpick)
 
+    def click_btn(self):
+        def onprev(event):
+            if not self.current_displayed:
+                return
+            fig, ax, idx, ray = self.current_displayed
+            lastx, lasty = self.wall_hits[:, 0][idx], self.wall_hits[:, 1][idx]
+            for ind in range(len(self.wall_hits)):
+                if 0 < lastx - self.wall_hits[:, 0][ind] < 0.2 and abs(self.wall_hits[:, 1][ind] - lasty) < 0.5:
+                    self.display_img(ind)
+                    break
+            print("cant find prev")
+        
+        def onnext(event):
+            if not self.current_displayed:
+                return
+            fig, ax, idx, ray = self.current_displayed
+            lastx, lasty = self.wall_hits[:, 0][idx], self.wall_hits[:, 1][idx]
+            for ind in range(len(self.wall_hits)):
+                if 0 < self.wall_hits[:, 0][ind] - lastx < 0.2 and abs(lasty - self.wall_hits[:, 1][ind]) < 0.5:
+                    self.display_img(ind)
+                    break
+            print("cant find next")
+
+        self.bprev.on_clicked(onprev)
+        self.bnext.on_clicked(onnext)
 
 def main(args):
     #visualizer('/home/locobot/slam_ws/image_data').process()
