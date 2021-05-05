@@ -36,10 +36,17 @@ class tracer():
         self.ray_publisher = rospy.Publisher('rays', MarkerArray,queue_size=1,latch=True)
 
         self.tf_listener = tf.TransformListener()
-        self.odomList = []
+        self.newOdomList = []
         self.odomThresh = 0.1
+        
+        self.oldOdomList = []
+        self.oldWallHits = []
+        self.oldRays = []
+        
+        self.newOdomListLength = 15
 
         self.last_odom = None
+        self.last_theta = None
         self.latest_map = None
         self.mapSize = 2021
 
@@ -56,7 +63,7 @@ class tracer():
         try:
             odom = self.tf_listener.transformPose('map',pose)
         except:
-            print('TF error in tracer')
+            #print('TF error in tracer')
             return
         
         i = odom
@@ -65,12 +72,21 @@ class tracer():
 
         if self.last_odom is None:
             self.last_odom = odom
-            self.odomList.append(odom)
+            self.last_theta = theta
+            self.newOdomList.append(odom)
         else:
             if (np.sqrt((self.last_odom.pose.position.x - odom.pose.position.x) ** 2 +
                         (self.last_odom.pose.position.y - odom.pose.position.y) ** 2) > self.odomThresh):
+                #print('enough distance', np.sqrt((self.last_odom.pose.position.x - odom.pose.position.x) ** 2 +
+                        #(self.last_odom.pose.position.y - odom.pose.position.y) ** 2))
                 self.last_odom = odom
-                self.odomList.append(odom)
+                self.last_theta = theta
+                self.newOdomList.append(odom)
+            
+            elif abs(theta - self.last_theta) >= np.pi/36:
+                self.last_odom = odom
+                self.last_theta = theta
+                self.newOdomList.append(odom)
 
     def callback_map(self, data):
         map = np.array(data.data)
@@ -208,20 +224,37 @@ class tracer():
         self.wall = np.array(self.wall)
 
     def process(self):
-        self.TwoD_index = []
-        self.orientation = []
         self.wall_hits = []
         self.rays = []
-        odom = self.odomList[:]
+        odom = self.newOdomList[:]
+        hit_total = 0
+        hit_total += len(self.oldWallHits)
         scale = 0.05
         
-        hit_total = 0
         
+        if len(odom) > self.newOdomListLength:
+            extraNum = len(odom) - self.newOdomListLength
+            pop_odom = self.newOdomList[:extraNum]
+            odom = self.newOdomList[extraNum:]
+            self.newOdomList = odom
+            
+            for od in pop_odom:
+                self.oldOdomList.append(od)
+            
+            for i in pop_odom:
+                x, y = i.pose.position.x + (self.mapSize/2)*scale, i.pose.position.y + (self.mapSize/2)*scale
+                theta = self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2]
+                
+                for t in np.linspace(-np.pi/6, np.pi/6, 30):
+                    hit, ray = self.raytrace_on_matplot(x, y, theta+t)
+                    if hit is not None:
+                        hit_total += 1
+                        self.oldWallHits.append(hit)
+                        self.oldRays.append(ray)
+      
         for i in odom:
             x, y = i.pose.position.x + (self.mapSize/2)*scale, i.pose.position.y + (self.mapSize/2)*scale
-            self.TwoD_index.append([x, y])
             theta = self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2]
-            self.orientation.append(theta)
             
             for t in np.linspace(-np.pi/6, np.pi/6, 30):
                 hit, ray = self.raytrace_on_matplot(x, y, theta+t)
@@ -229,22 +262,79 @@ class tracer():
                     hit_total += 1
                 self.wall_hits.append(hit)
                 self.rays.append(ray)
-                
         self.num_hits = hit_total
 
+
+    def filter_repeat(self):
+        resolution_set = set()
+        distinct_old_wall = []
+        distinct_old_ray = []
+        
+        for w, r in zip(self.oldWallHits, self.oldRays):
+            pixelX, pixelY = int(w[0]/0.05), int(w[1]/0.05)
+            if (pixelX, pixelY) not in resolution_set:
+                for i in range(-2, 3):
+                    for j in range(-2, 3):
+                        resolution_set.add((pixelX + i, pixelY + j))
+                        distinct_old_wall.append(w)
+                        
+                        newr = []
+                        for d in r:
+                            pixelX, pixelY = int(d[0]/0.05), int(d[1]/0.05)
+                            if (pixelX, pixelY) not in resolution_set:
+                                #for i in range(-2, 3):
+                                    #for j in range(-2, 3):
+                                resolution_set.add((pixelX + i, pixelY + j))
+                                newr.append(d)
+                        distinct_old_ray.append(newr)
+                        
+        self.oldWallHits = distinct_old_wall
+        self.oldRays = distinct_old_ray
+        
+        distinct_new_wall = []
+        distinct_new_ray = []
+        
+        for w, r in zip(self.wall_hits, self.rays):
+            if w is not None:
+                pixelX, pixelY = int(w[0]/0.05), int(w[1]/0.05)
+                if (pixelX, pixelY) not in resolution_set:
+                    for i in range(-2, 3):
+                        for j in range(-2, 3):
+                            resolution_set.add((pixelX + i, pixelY + j))
+                            distinct_new_wall.append(w)
+                            
+                            newr = []
+                            for d in r:
+                                pixelX, pixelY = int(d[0]/0.05), int(d[1]/0.05)
+                                if (pixelX, pixelY) not in resolution_set:
+                                    #for i in range(-2, 3):
+                                        #for j in range(-2, 3):
+                                    resolution_set.add((pixelX + i, pixelY + j))
+                                    newr.append(d)
+                            distinct_new_ray.append(newr)
+                        
+        self.wall_hits = distinct_new_wall
+        self.rays = distinct_new_ray
+        
+        
+        
+        
 
     def raytrace(self):
         t1 = time.time()
         self.get_wall()
         t2 = time.time()
+        #print('wall time', t2-t1)
         self.process()
         t3 = time.time()
-        print('wall time', t2-t1)
-        print('process time', t3-t2)
+        #print('process time', t3-t2)
+        self.filter_repeat()
+        #print('filter time', time.time()-t3)
         mr_arr = MarkerArray()
+        #print('num odom', len(self.odomList))
         
         _id = 0
-        for i in self.wall_hits:
+        for i in self.wall_hits + self.oldWallHits:
             if i is None:
                 continue
             m = Marker()
@@ -259,7 +349,7 @@ class tracer():
             m.scale.y = 0.1
             m.scale.z = 0.1		
             m.color.r = 1.0
-            m.color.g = 0
+            m.color.g = 1.0
             m.color.b = 0
             m.color.a = 1.0
             
@@ -274,6 +364,7 @@ class tracer():
             
         
         self.wall_hit_publisher.publish(mr_arr)
+        #print('middle publish time', time.time()-t3)
             
         
         wallhit_grid = OccupancyGrid()
@@ -293,9 +384,9 @@ class tracer():
         origin.position.z = 0
     
         wallhit_grid.info.origin = origin
-        
+        #print('num hit', self.num_hits)
+        assignment_num = 0
         if self.num_hits < 300:
-            print('num hit', self.num_hits)
             wallhit_grid.data = self.latest_map_origin
             
         else:
@@ -303,8 +394,6 @@ class tracer():
             
             center = 1010  
             grid = -np.ones((2021, 2021))
-            
-            assert len(self.rays) == len(self.wall_hits)
             
             for i in range(len(self.wall_hits)):
                 hit = self.wall_hits[i]
@@ -314,14 +403,34 @@ class tracer():
                 for p in ray:
                     y, x = p[0]-(2021*0.05/2), p[1]-(2021*0.05/2)
                     
+                    assignment_num += 1
                     grid[center + int(x/0.05)-5:center + int(x/0.05)+5, 
                          center + int(y/0.05)-5:center + int(y/0.05)+5] = originmap[center + int(x/0.05)-5:center + int(x/0.05)+5, 
                                                                                     center + int(y/0.05)-5:center + int(y/0.05)+5]
                     
-                y, x = hit[0]-(2021*0.05/2), hit[1]-(2021*0.05/2)
-                grid[center + int(x/0.05)-5:center + int(x/0.05)+5, 
-                    center + int(y/0.05)-5:center + int(y/0.05)+5] = originmap[center + int(x/0.05)-5:center + int(x/0.05)+5, 
-                                                                            center + int(y/0.05)-5:center + int(y/0.05)+5]
+                #y, x = hit[0]-(2021*0.05/2), hit[1]-(2021*0.05/2)
+                #grid[center + int(x/0.05)-5:center + int(x/0.05)+5, 
+                    #center + int(y/0.05)-5:center + int(y/0.05)+5] = originmap[center + int(x/0.05)-5:center + int(x/0.05)+5, 
+                                                                            #center + int(y/0.05)-5:center + int(y/0.05)+5]
+                
+                
+            for i in range(len(self.oldWallHits)):
+                hit = self.oldWallHits[i]
+                ray = self.oldRays[i]
+                if hit is None:
+                    continue
+                for p in ray:
+                    y, x = p[0]-(2021*0.05/2), p[1]-(2021*0.05/2)
+                    
+                    assignment_num += 1
+                    grid[center + int(x/0.05)-5:center + int(x/0.05)+5, 
+                         center + int(y/0.05)-5:center + int(y/0.05)+5] = originmap[center + int(x/0.05)-5:center + int(x/0.05)+5, 
+                                                                                    center + int(y/0.05)-5:center + int(y/0.05)+5]
+                    
+                #y, x = hit[0]-(2021*0.05/2), hit[1]-(2021*0.05/2)
+                #grid[center + int(x/0.05)-5:center + int(x/0.05)+5, 
+                    #center + int(y/0.05)-5:center + int(y/0.05)+5] = originmap[center + int(x/0.05)-5:center + int(x/0.05)+5, 
+                                                                            #center + int(y/0.05)-5:center + int(y/0.05)+5]
                 
             grid = grid.reshape((2021*2021))        
 
@@ -331,6 +440,10 @@ class tracer():
         self.newMap_pub.publish(wallhit_grid)
         
         wallhit_map = np.zeros((2021, 2021))
+        
+        t4 = time.time()
+        #print('publish time', t4-t3)
+        #print('assignment num', assignment_num)
             
         
         
@@ -353,6 +466,6 @@ class tracer():
 if __name__ == '__main__':
     T = tracer()
     while not rospy.is_shutdown():
-        if T.latest_map is not None and len(T.odomList):
+        if T.latest_map is not None and len(T.newOdomList):
             T.raytrace()
 

@@ -27,7 +27,7 @@
                 <arg name="enable_pointcloud" value="false"/>
             </include>
             <include file="$(find flir_boson_usb)/launch/flir_boson_rectified.launch">
-                <arg name="dev" value="/dev/video0"/>
+                <arg name="dev" value="/dev/video3"/>
             </include>
             <!-- <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
                 <param name="video_device" value="/dev/video3"/>
@@ -45,11 +45,11 @@
                 
                 <!-- Min and max height to sample from depth data - these values worked for my drone -->
                 <param name="min_height" value="0.3"/>
-                <param name="max_height" value="3"/>
+                <param name="max_height" value="0.4"/>
                 
                 <!-- Min and max range range of generated laser scan - set this to match your depth sensor -->
                 <param name="range_min" value="0.2"/>
-                <param name="range_max" value="10.0"/>
+                <param name="range_max" value="4.0"/>
                 
                 <!-- Frame of your depth sensor -->
                 <param name="target_frame" value="camera_link"/>
@@ -114,6 +114,6 @@
 <!-- 
     <node pkg="astar_simple" name="astar" type="map_server.py" output="screen">  -->
 <!-- </node> -->
-    <include file="$(find astar_simple)/launch/astar.launch">
-            </include>
+    <!-- <include file="$(find astar_simple)/launch/astar.launch">
+            </include> -->
 </launch>
