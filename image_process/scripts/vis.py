@@ -224,10 +224,15 @@ class visualizer:
         lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.', markersize=4)
         self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True)
 
-        axprev = plt.axes([0.69, 0.04, 0.1, 0.03])
-        axnext = plt.axes([0.80, 0.04, 0.1, 0.03])
-        self.bnext = Button(axnext, 'Up', color='1.0')
-        self.bprev = Button(axprev, 'Down', color='1.0')
+        
+        axup = plt.axes([0.7, 0.05, 0.1, 0.03])
+        axdown = plt.axes([0.7, 0.01, 0.1, 0.03])
+        axleft = plt.axes([0.59, 0.03, 0.1, 0.03])
+        axright = plt.axes([0.81, 0.03, 0.1, 0.03])
+        self.bup = Button(axup, 'Up', color='1.0')
+        self.bdown = Button(axdown, 'Down', color='1.0')
+        self.bleft = Button(axleft, 'Left', color='1.0')
+        self.bright = Button(axright, 'Right', color='1.0')
         
         
         print(self.wall_hits.shape)
@@ -328,30 +333,74 @@ class visualizer:
         self.fig.canvas.mpl_connect('pick_event', onpick)
 
     def click_btn(self):
-        def onprev(event):
-            if not self.current_displayed:
-                return
-            fig, ax, idx, ray = self.current_displayed
-            lastx, lasty = self.wall_hits[:, 0][idx], self.wall_hits[:, 1][idx]
+        def searchdown(threshold, lastx, lasty):
             for ind in range(len(self.wall_hits)):
-                if 0 < lastx - self.wall_hits[:, 0][ind] < 0.2 and abs(self.wall_hits[:, 1][ind] - lasty) < 0.5:
+                if 0 < lastx - self.wall_hits[:, 0][ind] < threshold and abs(self.wall_hits[:, 1][ind] - lasty) < 0.5:
                     self.display_img(ind)
-                    break
-            print("cant find prev")
-        
-        def onnext(event):
-            if not self.current_displayed:
-                return
-            fig, ax, idx, ray = self.current_displayed
-            lastx, lasty = self.wall_hits[:, 0][idx], self.wall_hits[:, 1][idx]
-            for ind in range(len(self.wall_hits)):
-                if 0 < self.wall_hits[:, 0][ind] - lastx < 0.2 and abs(lasty - self.wall_hits[:, 1][ind]) < 0.5:
-                    self.display_img(ind)
-                    break
-            print("cant find next")
+                    return True
+            return False
 
-        self.bprev.on_clicked(onprev)
-        self.bnext.on_clicked(onnext)
+        def ondown(event):
+            if not self.current_displayed:
+                return
+            fig, ax, idx, ray = self.current_displayed
+            lastx, lasty = self.wall_hits[:, 0][idx], self.wall_hits[:, 1][idx]
+            if not searchdown(0.2, lastx, lasty):
+                if not searchdown(0.4, lastx, lasty):
+                    print("cant find down")
+
+        def searchup(threshold, lastx, lasty):
+            for ind in range(len(self.wall_hits)):
+                if 0 < self.wall_hits[:, 0][ind] - lastx < threshold and abs(self.wall_hits[:, 1][ind] - lasty) < 0.5:
+                    self.display_img(ind)
+                    return True
+            return False
+        
+        def onup(event):
+            if not self.current_displayed:
+                return
+            fig, ax, idx, ray = self.current_displayed
+            lastx, lasty = self.wall_hits[:, 0][idx], self.wall_hits[:, 1][idx]
+            if not searchup(0.2, lastx, lasty):
+                if not searchup(0.4, lastx, lasty):
+                    print("cant find up")
+
+        def searchleft(threshold, lastx, lasty):
+            for ind in range(len(self.wall_hits)):
+                if 0 < lasty - self.wall_hits[:, 1][ind] < threshold and abs(self.wall_hits[:, 0][ind] - lastx) < 0.5:
+                    self.display_img(ind)
+                    return True
+            return False
+
+        def onleft(event):
+            if not self.current_displayed:
+                return
+            fig, ax, idx, ray = self.current_displayed
+            lastx, lasty = self.wall_hits[:, 0][idx], self.wall_hits[:, 1][idx]
+            if not searchleft(0.2, lastx, lasty):
+                if not searchleft(0.4, lastx, lasty):
+                    print("cant find left")
+        
+        def searchright(threshold, lastx, lasty):
+            for ind in range(len(self.wall_hits)):
+                if 0 < self.wall_hits[:, 1][ind] - lasty < threshold and abs(self.wall_hits[:, 0][ind] - lastx) < 0.5:
+                    self.display_img(ind)
+                    return True
+            return False        
+
+        def onright(event):
+            if not self.current_displayed:
+                return
+            fig, ax, idx, ray = self.current_displayed
+            lastx, lasty = self.wall_hits[:, 0][idx], self.wall_hits[:, 1][idx]
+            if not searchright(0.2, lastx, lasty):
+                if not searchright(0.4, lastx, lasty):
+                    print("cant find left")
+
+        self.bdown.on_clicked(ondown)
+        self.bup.on_clicked(onup)
+        self.bleft.on_clicked(onleft)
+        self.bright.on_clicked(onright)
 
 def main(args):
     #visualizer('/home/locobot/slam_ws/image_data').process()
@@ -361,3 +410,4 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv)
+    
