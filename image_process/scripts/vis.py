@@ -215,6 +215,7 @@ class visualizer:
 
         self.TwoD_index = np.array(self.TwoD_index)
         self.wall_hits = np.array(self.wall_hits)
+        print(self.wall_hits)
         self.fig, self.ax1 = plt.subplots(figsize=(7, 10))
         self.ax1.set_title('click on points', picker=True)
         self.ax1.set_ylabel('X(m)', picker=True)
@@ -244,6 +245,29 @@ class visualizer:
         plt.show()
     
     def display_img(self, ind):
+        def anomaly(ind):
+            im = self.images[ind].copy()
+            width_cutoff = im.shape[1] // 2
+            heatmap = np.mean(im[:, width_cutoff:], axis=2).astype('uint8')
+            previous = 0
+            ambient = (0, 0, 0)
+            for i in np.linspace(0, 255, 51):
+                less_heat_cnt = np.sum(heatmap < i)
+                cnt = less_heat_cnt - previous
+                previous = less_heat_cnt
+                if cnt > ambient[2]:
+                    ambient = (i-5, i, cnt)
+            print("ambient", ambient)
+            
+            heat = (heatmap < ambient[1]).astype('uint8')
+            heat[heat == 1] = 255
+            dist = np.sqrt((self.TwoD_index[:,0][ind] - self.wall_hits[:,0][ind]) ** 2 + (self.TwoD_index[:,1][ind] - self.wall_hits[:,1][ind]) ** 2)
+            roboth = 0.6
+            totalh = dist/np.sqrt(3) + roboth + (dist - roboth*np.sqrt(3)) / np.sqrt(3)
+            floor_cutoff = int((dist - roboth*np.sqrt(3)) / np.sqrt(3) / totalh* heat.shape[0])
+            heat[floor_cutoff:] = 0
+            return cv2.cvtColor(heat,cv2.COLOR_GRAY2RGB)
+
         def onclose(event):
             if self.current_displayed:
                 self.current_displayed[3].remove()
@@ -265,9 +289,9 @@ class visualizer:
             
             img_with_heatmap = self.images[ind].copy()
             width_cutoff = img_with_heatmap.shape[1] // 2
-            img_with_heatmap[:, width_cutoff:] = cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_JET)   
+            img_with_heatmap[:, width_cutoff:] = cv2.cvtColor(cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_JET), cv2.COLOR_BGR2RGB)
             plt.xticks([]), plt.yticks([])
-            ax.imshow(img_with_heatmap)
+            ax.imshow(cv2.hconcat([img_with_heatmap, anomaly(ind)]))
             self.current_displayed = (fig, ax, ind, line) # keep track of current fig, idx and ray
             plt.show()
             
@@ -280,13 +304,13 @@ class visualizer:
             line, = self.ax1.plot(combined[:,1],combined[:,0], '.', markersize=2)
             self.fig.canvas.draw() # update the plot with the ray
             
-            imgfig, imgax = plt.subplots(figsize=(10, 5))
+            imgfig, imgax = plt.subplots(figsize=(15, 5))
             imgfig.canvas.mpl_connect('close_event', onclose)
             img_with_heatmap = self.images[ind].copy()
             width_cutoff = img_with_heatmap.shape[1] // 2
-            img_with_heatmap[:, width_cutoff:] = cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_JET)   
+            img_with_heatmap[:, width_cutoff:] = cv2.cvtColor(cv2.applyColorMap(img_with_heatmap[:, width_cutoff:], cv2.COLORMAP_JET), cv2.COLOR_BGR2RGB)
             plt.xticks([]), plt.yticks([])
-            imgax.imshow(img_with_heatmap)
+            imgax.imshow(cv2.hconcat([img_with_heatmap, anomaly(ind)]))
             self.current_displayed = (imgfig, imgax, ind, line) # keep track of current fig, ax, idx and ray
             plt.show()
 
