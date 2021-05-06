@@ -30,6 +30,7 @@ class processor:
         self.image_rgb_list = []
         self.image_thm_list = []
         self.odom_list = []
+        self.rate =  rospy.Rate(1)
         rospy.on_shutdown(self.shutdown)
         
     def callback(self,image_rgb,image_ir,odom):
@@ -47,6 +48,7 @@ class processor:
             # self.image_pub_ir.publish(self.bridge.cv2_to_imgmsg(image_ir,"mono8"))
             self.count+=1
             # print("Sync FPS:", self.count/(rospy.get_time()-self.start_time))
+            self.rate.sleep()
         except CvBridgeError as e:
             print(e)
             

@@ -54,10 +54,9 @@ Explore::Explore()
   : private_nh_("~")
   , tf_listener_(ros::Duration(10.0))
   , costmap_client_(private_nh_, relative_nh_, &tf_listener_)
-  // , move_base_client_("move_base")
+  , move_base_client_("move_base")
   , prev_distance_(0)
   , last_markers_count_(0)
-  , frontier_pub(private_nh_.advertise<move_base_msgs::MoveBaseGoal>("frontier", 10, true))
 {
   double timeout;
   double min_frontier_size;
@@ -80,7 +79,7 @@ Explore::Explore()
   }
 
   ROS_INFO("Waiting to connect to move_base server");
-  // move_base_client_.waitForServer();
+  move_base_client_.waitForServer();
   ROS_INFO("Connected to move_base server");
 
   exploring_timer_ =
@@ -237,14 +236,12 @@ void Explore::makePlan()
   goal.target_pose.pose.orientation.w = 1.;
   goal.target_pose.header.frame_id = costmap_client_.getGlobalFrameID();
   goal.target_pose.header.stamp = ros::Time::now();
-  // move_base_client_.sendGoal(
-  //     goal, [this, target_position](
-  //               const actionlib::SimpleClientGoalState& status,
-  //               const move_base_msgs::MoveBaseResultConstPtr& result) {
-  //       reachedGoal(status, result, target_position);
-  //     });
-  frontier_pub.publish(goal);
-  reachedGoal(goal);
+  move_base_client_.sendGoal(
+      goal, [this, target_position](
+                const actionlib::SimpleClientGoalState& status,
+                const move_base_msgs::MoveBaseResultConstPtr& result) {
+        reachedGoal(status, result, target_position);
+      });
 }
 
 bool Explore::goalOnBlacklist(const geometry_msgs::Point& goal)
@@ -264,11 +261,13 @@ bool Explore::goalOnBlacklist(const geometry_msgs::Point& goal)
   return false;
 }
 
-void Explore::reachedGoal(const move_base_msgs::MoveBaseGoal& frontier_goal)
+void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
+                          const move_base_msgs::MoveBaseResultConstPtr&,
+                          const geometry_msgs::Point& frontier_goal)
 {
-  ROS_DEBUG("Reached goal");
-  if (0) {
-    frontier_blacklist_.push_back(frontier_goal.target_pose.pose.position);
+  ROS_DEBUG("Reached goal with status: %s", status.toString().c_str());
+  if (status == actionlib::SimpleClientGoalState::ABORTED) {
+    frontier_blacklist_.push_back(frontier_goal);
     ROS_DEBUG("Adding current goal to black list");
   }
 
@@ -288,17 +287,7 @@ void Explore::start()
 
 void Explore::stop()
 {
-  // move_base_client_.cancelAllGoals();
-  move_base_msgs::MoveBaseGoal goal;
-  geometry_msgs::Point target_position;
-  target_position.x = 0.0;
-  target_position.y = 0.0;
-  target_position.z = 0.0;
-  goal.target_pose.pose.position = target_position;
-  goal.target_pose.pose.orientation.w = 1.;
-  goal.target_pose.header.frame_id = costmap_client_.getGlobalFrameID();
-  goal.target_pose.header.stamp = ros::Time::now();
-  frontier_pub.publish(goal);
+  move_base_client_.cancelAllGoals();
   exploring_timer_.stop();
   ROS_INFO("Exploration stopped.");
 }

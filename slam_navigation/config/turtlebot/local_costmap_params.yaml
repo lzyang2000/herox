@@ -16,4 +16,4 @@ local_costmap:
     - {name: obstacle_layer,      type: "costmap_2d::VoxelLayer"}
     - {name: inflation_layer,     type: "costmap_2d::InflationLayer"}
    inflation_layer:
-      inflation_radius: 0.15
+      inflation_radius: 0.1

@@ -115,17 +115,17 @@ DWAPlannerROS:
 #  holonomic_robot: false
 
 TrajectoryPlannerROS:
-   max_vel_x: 0.3
-   min_vel_x: 0.1
+   max_vel_x: 0.1
+   min_vel_x: 0.06
    max_vel_y: 0.0  # zero for a differential drive robot
    min_vel_y: 0.0
    max_vel_theta: 0.2
    min_vel_theta: -0.2
-   min_in_place_vel_theta: 0.2
+   min_in_place_vel_theta: 0.4
    escape_vel: 0
    acc_lim_x: 0.3 # From test trials (0.304,0.285,0.26,0.365)
    acc_lim_y: 0.0 # zero for a differential drive robot
-   acc_lim_theta: 0.3 #probably closer to 1.3 
+   acc_lim_theta: 1.3 #probably closer to 1.3 
 
    holonomic_robot: false
    yaw_goal_tolerance: 0.20 # about 12 degrees
@@ -133,7 +133,7 @@ TrajectoryPlannerROS:
    latch_xy_goal_tolerance: true
    pdist_scale: 0.6
    gdist_scale: 0.7
-   meter_scoring: false
+   meter_scoring: true
 
    heading_lookahead: 0.375
 
@@ -145,8 +145,8 @@ TrajectoryPlannerROS:
    prune_plan: true
 
    #sim_time: 4
-   sim_granularity: 0.025
-   angular_sim_granularity: 0.025
+   sim_granularity: 0.05
+   angular_sim_granularity: 0.05
    vx_samples: 28
    vy_samples: 0 # zero for a differential drive robot
    vtheta_samples: 40
