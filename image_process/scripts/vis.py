@@ -97,7 +97,8 @@ class visualizer:
     
     def draw_wall_jason(self):
         self.wall = []
-        m = np.array(skio.imread("../../../307-1data/map.pgm"))
+        #m = np.array(skio.imread("../../../307succdata/map.pgm"))
+        m = np.array(skio.imread("../../../307succdata/307-succ.png"))
         #self.occupancy = np.zeros(m.shape)
         #print(self.occupancy.shape)
         fill= m.copy()
@@ -201,18 +202,35 @@ class visualizer:
         prev = [float('inf'), float('inf')]
         filterimage = []
         for i, j in zip(self.coords, self.images):
-            if (np.sqrt((prev[0] - i.pose.position.x) ** 2 + (prev[1] - i.pose.position.y) ** 2) > -0.01):
-                self.TwoD_index.append([i.pose.position.x,i.pose.position.y])
+            if (np.sqrt((prev[0] - i.pose.position.x) ** 2 + (prev[1] - i.pose.position.y) ** 2) > 0.001):
+                
                 theta = self.euler_from_quaternion(i.pose.orientation.x, i.pose.orientation.y, i.pose.orientation.z, i.pose.orientation.w)[2]
-                self.orientation.append(theta)
+                
                 hit, _ = self.raytrace_on_matplot(i.pose.position.x, i.pose.position.y, theta)
-                self.wall_hits.append(hit)
-                filterimage.append(j)
+                if hit:
+                    self.TwoD_index.append([i.pose.position.x,i.pose.position.y])
+                    self.orientation.append(theta)
+                    self.wall_hits.append(hit)
+                    filterimage.append(j)
             prev = [i.pose.position.x,i.pose.position.y]
         self.images = filterimage
         print('total data num', len(self.images))
         
 
+        
+        #del_list = []
+        #for i in range(len(self.wall_hits)):
+        #    if not self.wall_hits[i]:
+        #        del_list.insert(0, i)
+        #for e in del_list:
+        #    self.wall_hits.pop(e)
+        #    self.TwoD_index.pop(e)
+        #    self.images.pop(e)
+        #    self.orientation.pop(e)
+        print("wall", len(self.wall_hits))
+        print("path", len(self.TwoD_index))
+        print("image", len(self.images))
+        print("orien", len(self.orientation))
         self.TwoD_index = np.array(self.TwoD_index)
         self.wall_hits = np.array(self.wall_hits)
         print(self.wall_hits)
@@ -221,9 +239,9 @@ class visualizer:
         self.ax1.set_ylabel('X(m)', picker=True)
         self.ax1.set_xlabel('Y(m)', picker=True)
         print(self.TwoD_index.shape)
-        line, = self.ax1.plot(self.TwoD_index[:,1],self.TwoD_index[:,0], '-o')
+        line, = self.ax1.plot(self.TwoD_index[:,1],self.TwoD_index[:,0], '-o', markersize=4)
         lin2, = self.ax1.plot(self.wall[:,1],self.wall[:,0], '.', markersize=4)
-        self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True)
+        self.ax1.scatter(self.TwoD_index[:,1],self.TwoD_index[:,0], picker=True, s=5)
 
         
         axup = plt.axes([0.7, 0.05, 0.1, 0.03])
@@ -283,7 +301,9 @@ class visualizer:
             _, path = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind])
             _, left_limit = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] - np.pi/4, step=0.1)
             _, right_limit = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] + np.pi/4, step=0.1)
-            combined = np.concatenate((path, left_limit, right_limit), axis=0)
+            _, left_valid = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] - np.pi/12, step=0.1)
+            _, right_valid = self.raytrace_on_matplot(self.TwoD_index[:,0][ind], self.TwoD_index[:,1][ind], self.orientation[ind] + np.pi/12, step=0.1)
+            combined = np.concatenate((path, left_limit, right_limit, left_valid, right_valid), axis=0)
             line, = self.ax1.plot(combined[:,1],combined[:,0], '.', markersize=2)
             self.fig.canvas.draw() # update the plot with the ray
             
@@ -428,7 +448,7 @@ class visualizer:
 
 def main(args):
     #visualizer('/home/locobot/slam_ws/image_data').process()
-    v = visualizer('../../../307-1data')
+    v = visualizer('../../../307succdata')
     v.draw_wall_jason()
     v.process()
 
